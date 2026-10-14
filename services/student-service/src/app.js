@@ -4,6 +4,7 @@ const cors = require('cors');
 const studentRoutes = require('./routes/studentRoutes');
 const applicationRoutes = require('./routes/applicationRoutes');
 const resumeRoutes = require('./routes/resumeRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 
 const app = express();
@@ -30,6 +31,8 @@ app.use('/api/resume', resumeRoutes);
 app.use('/api/v1/resume', resumeRoutes);
 app.use('/api/resumes', resumeRoutes);
 app.use('/api/v1/resumes', resumeRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/v1/ai', aiRoutes);
 
 // ── Error handling ────────────────────────────────────────────────────────────
 app.use(notFound);
