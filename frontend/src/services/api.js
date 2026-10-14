@@ -1,56 +1,77 @@
+import axios from 'axios';
+
 /**
- * Base API client for JobSync Student Microservice
+ * JobSync API Client Foundation using Axios
  */
 
-const API_BASE_URL =
-  (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_STUDENT_SERVICE_URL) ||
-  'http://localhost:5001/api/v1';
+const STUDENT_SERVICE_BASE_URL =
+  import.meta.env.VITE_STUDENT_SERVICE_URL || 'http://localhost:5001';
 
-export async function apiRequest(endpoint, options = {}) {
-  const url = `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+const PLACEMENT_SERVICE_BASE_URL =
+  import.meta.env.VITE_PLACEMENT_SERVICE_URL || 'http://localhost:5002';
 
-  const defaultHeaders = {
+// Create Student Service Axios Instance
+export const studentApiClient = axios.create({
+  baseURL: STUDENT_SERVICE_BASE_URL,
+  timeout: 10000,
+  headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json'
-  };
-
-  const config = {
-    ...options,
-    headers: {
-      ...defaultHeaders,
-      ...options.headers
-    }
-  };
-
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 6000);
-    config.signal = controller.signal;
-
-    const response = await fetch(url, config);
-    clearTimeout(timeoutId);
-
-    const data = await response.json().catch(() => null);
-
-    if (!response.ok) {
-      return {
-        success: false,
-        message: data?.message || `Request failed with status ${response.status}`
-      };
-    }
-
-    return {
-      success: true,
-      data: data?.data ?? data
-    };
-  } catch (error) {
-    return {
-      success: false,
-      message: error.name === 'AbortError' ? 'Network request timed out' : error.message || 'Network error'
-    };
   }
+});
+
+// Create Placement Service Axios Instance
+export const placementApiClient = axios.create({
+  baseURL: PLACEMENT_SERVICE_BASE_URL,
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json',
+    Accept: 'application/json'
+  }
+});
+
+// Interceptor helper to normalize API responses to standard JobSync format
+function attachInterceptors(clientInstance) {
+  clientInstance.interceptors.request.use(
+    (config) => {
+      // Future authentication token attachment hook
+      const token = localStorage.getItem('jobsync_token');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    },
+    (error) => Promise.reject(error)
+  );
+
+  clientInstance.interceptors.response.use(
+    (response) => {
+      // Standardize response format: { success: true, data: ... }
+      if (response.data && typeof response.data === 'object' && 'success' in response.data) {
+        return response.data;
+      }
+      return {
+        success: true,
+        data: response.data
+      };
+    },
+    (error) => {
+      // Standardize error format: { success: false, message: ... }
+      const message =
+        error.response?.data?.message ||
+        error.message ||
+        'An unexpected network error occurred';
+
+      return Promise.resolve({
+        success: false,
+        message
+      });
+    }
+  );
 }
 
-export default {
-  apiRequest
-};
+attachInterceptors(studentApiClient);
+attachInterceptors(placementApiClient);
+
+// Default API client pointing to Student Service
+export default studentApiClient;

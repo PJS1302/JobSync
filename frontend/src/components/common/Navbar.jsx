@@ -1,66 +1,55 @@
 import React from 'react';
-import NotificationBell from './NotificationBell';
+import { Link } from 'react-router-dom';
 
 /**
- * Top Navbar component for the Student Portal
+ * Common Navbar component using Tailwind CSS
  */
-export default function Navbar({
-  student,
-  notifications = [],
-  unreadCount = 0,
-  onMarkAsRead,
-  onToggleSidebar
-}) {
-  const initials = student?.name
-    ? student.name
-        .split(' ')
-        .map((n) => n[0])
-        .join('')
-        .slice(0, 2)
-        .toUpperCase()
-    : 'JS';
-
+export default function Navbar({ onToggleSidebar }) {
   return (
-    <header className="navbar">
-      <div className="navbar-left">
-        <button
-          id="btn-mobile-sidebar-toggle"
-          type="button"
-          className="mobile-menu-btn"
-          onClick={onToggleSidebar}
-          aria-label="Toggle navigation menu"
-        >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="3" y1="12" x2="21" y2="12" />
-            <line x1="3" y1="6" x2="21" y2="6" />
-            <line x1="3" y1="18" x2="21" y2="18" />
-          </svg>
-        </button>
+    <header className="sticky top-0 z-40 h-16 w-full bg-slate-900/80 backdrop-blur-md border-b border-slate-800 px-4 md:px-6 flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        {onToggleSidebar && (
+          <button
+            type="button"
+            className="md:hidden p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            onClick={onToggleSidebar}
+            aria-label="Toggle Navigation"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        )}
 
-        <a href="#dashboard" className="nav-brand">
-          <div className="nav-brand-logo">
-            <svg viewBox="0 0 24 24" fill="currentColor">
+        <Link to="/" className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+            <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
               <path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z" />
             </svg>
           </div>
-          <span className="nav-brand-title">JobSync</span>
-        </a>
+          <span className="text-lg font-bold tracking-tight text-white">JobSync</span>
+        </Link>
 
-        <span className="nav-portal-badge">Student Portal</span>
+        <span className="hidden sm:inline-flex px-2.5 py-0.5 text-xs font-semibold rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+          Placement Portal
+        </span>
       </div>
 
-      <div className="navbar-right">
-        <NotificationBell
-          notifications={notifications}
-          unreadCount={unreadCount}
-          onMarkAsRead={onMarkAsRead}
-        />
+      <div className="flex items-center gap-4">
+        {/* Connection status indicator */}
+        <div className="hidden lg:flex items-center gap-2 text-xs text-slate-400">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span>Services Ready</span>
+        </div>
 
-        <div className="user-profile-menu" title={`Logged in as ${student?.name || 'Student'}`}>
-          <div className="user-avatar">{initials}</div>
-          <div className="user-details">
-            <span className="user-name">{student?.name || 'Student Candidate'}</span>
-            <span className="user-dept">{student?.department || 'Computer Science'} • {student?.rollNumber || '22CS104'}</span>
+        {/* User avatar menu */}
+        <div className="flex items-center gap-3 pl-3 border-l border-slate-800">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold text-xs flex items-center justify-center ring-2 ring-slate-800">
+            JS
+          </div>
+          <div className="hidden sm:block text-left">
+            <div className="text-xs font-semibold text-white">Alex Rivera</div>
+            <div className="text-[11px] text-slate-400">22CS104 • CSE</div>
           </div>
         </div>
       </div>
