@@ -5,6 +5,9 @@ const studentRoutes = require('./routes/studentRoutes');
 const applicationRoutes = require('./routes/applicationRoutes');
 const resumeRoutes = require('./routes/resumeRoutes');
 const aiRoutes = require('./routes/aiRoutes');
+const interviewRoutes = require('./routes/interviewRoutes');
+const placementRoutes = require('./routes/placementRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 
 const app = express();
@@ -33,6 +36,12 @@ app.use('/api/resumes', resumeRoutes);
 app.use('/api/v1/resumes', resumeRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/v1/ai', aiRoutes);
+app.use('/api/interviews', interviewRoutes);
+app.use('/api/v1/interviews', interviewRoutes);
+app.use('/api/placements', placementRoutes);
+app.use('/api/v1/placements', placementRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
 
 // ── Error handling ────────────────────────────────────────────────────────────
 app.use(notFound);
