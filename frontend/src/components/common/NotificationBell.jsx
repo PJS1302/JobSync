@@ -1,21 +1,23 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { getRelativeTime } from '../../utils/formatDate';
+import NotificationDropdown from '../notifications/NotificationDropdown';
 
 /**
- * NotificationBell component with dropdown drawer
+ * NotificationBell Component using Tailwind CSS
+ * Displays notification trigger icon, unread count badge, and popover dropdown
  */
 export default function NotificationBell({
   notifications = [],
   unreadCount = 0,
-  onMarkAsRead
+  onMarkRead,
+  onMarkAllRead
 }) {
   const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef(null);
+  const bellRef = useRef(null);
 
   // Close dropdown on click outside
   useEffect(() => {
     function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      if (bellRef.current && !bellRef.current.contains(event.target)) {
         setIsOpen(false);
       }
     }
@@ -28,76 +30,46 @@ export default function NotificationBell({
   }, [isOpen]);
 
   return (
-    <div className="notification-wrapper" ref={dropdownRef}>
+    <div className="relative" ref={bellRef}>
       <button
         id="btn-notification-bell"
         type="button"
-        className="bell-btn"
-        aria-label="View notifications"
+        className="relative p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-slate-300 hover:text-white transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
+        aria-label="View placement notifications"
         onClick={() => setIsOpen(!isOpen)}
       >
         <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
+          className="w-5 h-5"
           fill="none"
           stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+          viewBox="0 0 24 24"
         >
-          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-          <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+          />
         </svg>
-        {unreadCount > 0 && <span className="bell-badge">{unreadCount}</span>}
+
+        {unreadCount > 0 && (
+          <span
+            id="notification-unread-count"
+            className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white font-extrabold text-[10px] flex items-center justify-center border-2 border-slate-900 shadow-md animate-pulse"
+          >
+            {unreadCount}
+          </span>
+        )}
       </button>
 
       {isOpen && (
-        <div className="notification-dropdown">
-          <div className="notification-header">
-            <h4>Notifications & Alerts</h4>
-            {unreadCount > 0 && onMarkAsRead && (
-              <button
-                type="button"
-                className="btn btn-ghost btn-sm"
-                onClick={() => onMarkAsRead('all')}
-              >
-                Mark all read
-              </button>
-            )}
-          </div>
-
-          <div className="notification-list">
-            {notifications.length === 0 ? (
-              <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                No notifications right now
-              </div>
-            ) : (
-              notifications.map((item) => (
-                <div
-                  key={item.id}
-                  className={`notification-item ${!item.read ? 'unread' : ''}`}
-                  onClick={() => {
-                    if (!item.read && onMarkAsRead) onMarkAsRead(item.id);
-                  }}
-                >
-                  <span
-                    className="notification-indicator"
-                    style={{
-                      backgroundColor: item.priority === 'high' ? 'var(--danger)' : 'var(--accent-primary)',
-                      opacity: item.read ? 0.3 : 1
-                    }}
-                  />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div className="notification-title">{item.title}</div>
-                    <div className="notification-message">{item.message}</div>
-                    <div className="notification-time">{getRelativeTime(item.timestamp)}</div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
+        <NotificationDropdown
+          notifications={notifications}
+          unreadCount={unreadCount}
+          onMarkRead={onMarkRead}
+          onMarkAllRead={onMarkAllRead}
+          onClose={() => setIsOpen(false)}
+        />
       )}
     </div>
   );

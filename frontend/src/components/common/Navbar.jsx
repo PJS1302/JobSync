@@ -1,10 +1,49 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import NotificationBell from './NotificationBell';
+import {
+  getNotifications,
+  markNotificationAsRead,
+  markAllNotificationsAsRead
+} from '../../services/notificationService';
 
 /**
- * Common Navbar component using Tailwind CSS
+ * Common Navbar component using Tailwind CSS with live NotificationBell
  */
 export default function Navbar({ onToggleSidebar }) {
+  const [notifications, setNotifications] = useState([]);
+
+  const loadNotifications = async () => {
+    try {
+      const res = await getNotifications();
+      if (res.success && res.data) {
+        setNotifications(res.data);
+      }
+    } catch (err) {
+      // Ignore
+    }
+  };
+
+  useEffect(() => {
+    loadNotifications();
+  }, []);
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  const handleMarkRead = async (id) => {
+    const res = await markNotificationAsRead(id);
+    if (res.success && res.data) {
+      setNotifications(res.data);
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    const res = await markAllNotificationsAsRead();
+    if (res.success && res.data) {
+      setNotifications(res.data);
+    }
+  };
+
   return (
     <header className="sticky top-0 z-40 h-16 w-full bg-slate-900/80 backdrop-blur-md border-b border-slate-800 px-4 md:px-6 flex items-center justify-between">
       <div className="flex items-center gap-3">
@@ -36,14 +75,20 @@ export default function Navbar({ onToggleSidebar }) {
       </div>
 
       <div className="flex items-center gap-4">
-        {/* Connection status indicator */}
-        <div className="hidden lg:flex items-center gap-2 text-xs text-slate-400">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span>Services Ready</span>
-        </div>
+        {/* Notification Bell */}
+        <NotificationBell
+          notifications={notifications}
+          unreadCount={unreadCount}
+          onMarkRead={handleMarkRead}
+          onMarkAllRead={handleMarkAllRead}
+        />
 
         {/* User avatar menu */}
-        <Link to="/profile" className="flex items-center gap-3 pl-3 border-l border-slate-800 hover:opacity-85 transition-opacity" title="View Student Profile">
+        <Link
+          to="/profile"
+          className="flex items-center gap-3 pl-3 border-l border-slate-800 hover:opacity-85 transition-opacity"
+          title="View Student Profile"
+        >
           <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold text-xs flex items-center justify-center ring-2 ring-slate-800">
             JS
           </div>

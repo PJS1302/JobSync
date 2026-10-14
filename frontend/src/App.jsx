@@ -8,10 +8,12 @@ import DriveDetails from './pages/student/DriveDetails';
 import Applications from './pages/student/Applications';
 import ApplicationDetails from './pages/student/ApplicationDetails';
 import Resume from './pages/student/Resume';
+import Interviews from './pages/student/Interviews';
+import Notifications from './pages/student/Notifications';
 import Placeholder from './pages/Placeholder';
 
 /**
- * App Routing with Student Dashboard, Profile, Drives, Applications, and Resume Analysis
+ * App Routing with Student Dashboard, Profile, Drives, Applications, Resume, Interviews, and Notifications
  */
 export default function App() {
   return (
@@ -26,8 +28,8 @@ export default function App() {
           <Route path="applications" element={<Applications />} />
           <Route path="applications/:id" element={<ApplicationDetails />} />
           <Route path="resume" element={<Resume />} />
-          <Route path="interviews" element={<Placeholder title="Interview Schedule" />} />
-          <Route path="notifications" element={<Placeholder title="Notifications & Alerts" />} />
+          <Route path="interviews" element={<Interviews />} />
+          <Route path="notifications" element={<Notifications />} />
           <Route path="*" element={<Placeholder title="Page Not Found (404)" />} />
         </Route>
       </Routes>
