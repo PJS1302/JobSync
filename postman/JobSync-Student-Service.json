@@ -2,8 +2,284 @@
   "info": {
     "_postman_id": "jobsync-student-service-collection",
     "name": "JobSync - Student Service",
-    "description": "Postman API Collection for JobSync Student Microservice endpoints (Profiles, Applications, AI, Resumes, Notifications).",
+    "description": "Postman API Collection for JobSync Student Microservice endpoints (Profiles, Resumes, Applications, Notifications).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
-  "item": []
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{student_service_url}}/health",
+          "host": ["{{student_service_url}}"],
+          "path": ["health"]
+        }
+      }
+    },
+    {
+      "name": "Students",
+      "item": [
+        {
+          "name": "Register Student",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Aditi Sharma\",\n  \"email\": \"aditi.sharma@example.com\",\n  \"password\": \"SecurePass123\",\n  \"rollNumber\": \"21CS001\",\n  \"department\": \"Computer Science and Engineering\",\n  \"batch\": 2025,\n  \"cgpa\": 8.9,\n  \"skills\": [\"React\", \"Node.js\", \"MongoDB\"]\n}"
+            },
+            "url": {
+              "raw": "{{student_service_url}}/students/register",
+              "host": ["{{student_service_url}}"],
+              "path": ["students", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login Student",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"aditi.sharma@example.com\",\n  \"password\": \"SecurePass123\"\n}"
+            },
+            "url": {
+              "raw": "{{student_service_url}}/students/login",
+              "host": ["{{student_service_url}}"],
+              "path": ["students", "login"]
+            }
+          }
+        },
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{student_service_url}}/students/me",
+              "host": ["{{student_service_url}}"],
+              "path": ["students", "me"]
+            }
+          }
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+91 9876543210\",\n  \"skills\": [\"React\", \"Node.js\", \"MongoDB\", \"TypeScript\", \"Docker\"]\n}"
+            },
+            "url": {
+              "raw": "{{student_service_url}}/students/me",
+              "host": ["{{student_service_url}}"],
+              "path": ["students", "me"]
+            }
+          }
+        },
+        {
+          "name": "Filter Students (Placement/Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{student_service_url}}/students?department=Computer Science and Engineering&minCgpa=8.0",
+              "host": ["{{student_service_url}}"],
+              "path": ["students"],
+              "query": [
+                { "key": "department", "value": "Computer Science and Engineering" },
+                { "key": "minCgpa", "value": "8.0" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Resumes",
+      "item": [
+        {
+          "name": "Upload Resume",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "resume", "type": "file", "src": "" },
+                { "key": "isDefault", "value": "true", "type": "text" },
+                { "key": "summary", "value": "Full-stack developer resume", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{student_service_url}}/resumes/upload",
+              "host": ["{{student_service_url}}"],
+              "path": ["resumes", "upload"]
+            }
+          }
+        },
+        {
+          "name": "Get My Resumes",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{student_service_url}}/resumes/my-resumes",
+              "host": ["{{student_service_url}}"],
+              "path": ["resumes", "my-resumes"]
+            }
+          }
+        },
+        {
+          "name": "Get Active Resume",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{student_service_url}}/resumes/active",
+              "host": ["{{student_service_url}}"],
+              "path": ["resumes", "active"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Applications",
+      "item": [
+        {
+          "name": "Apply to Placement Drive",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"driveId\": \"670d1a49f50e8b2b1a9e3d81\",\n  \"companyName\": \"Google\",\n  \"role\": \"Software Development Engineer\"\n}"
+            },
+            "url": {
+              "raw": "{{student_service_url}}/applications",
+              "host": ["{{student_service_url}}"],
+              "path": ["applications"]
+            }
+          }
+        },
+        {
+          "name": "Get My Applications",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{student_service_url}}/applications/my-applications",
+              "host": ["{{student_service_url}}"],
+              "path": ["applications", "my-applications"]
+            }
+          }
+        },
+        {
+          "name": "Update Application Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"SHORTLISTED\",\n  \"remarks\": \"Selected for technical round 1\"\n}"
+            },
+            "url": {
+              "raw": "{{student_service_url}}/applications/:id/status",
+              "host": ["{{student_service_url}}"],
+              "path": ["applications", ":id", "status"],
+              "variable": [{ "key": "id", "value": "" }]
+            }
+          }
+        },
+        {
+          "name": "Get Applications by Drive (Placement Service)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{student_service_url}}/applications/drive/:driveId",
+              "host": ["{{student_service_url}}"],
+              "path": ["applications", "drive", ":driveId"],
+              "variable": [{ "key": "driveId", "value": "" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Get My Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{student_service_url}}/notifications",
+              "host": ["{{student_service_url}}"],
+              "path": ["notifications"]
+            }
+          }
+        },
+        {
+          "name": "Mark Notification as Read",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{student_service_url}}/notifications/:id/read",
+              "host": ["{{student_service_url}}"],
+              "path": ["notifications", ":id", "read"],
+              "variable": [{ "key": "id", "value": "" }]
+            }
+          }
+        },
+        {
+          "name": "Mark All as Read",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{student_service_url}}/notifications/read-all",
+              "host": ["{{student_service_url}}"],
+              "path": ["notifications", "read-all"]
+            }
+          }
+        }
+      ]
+    }
+  ]
 }
