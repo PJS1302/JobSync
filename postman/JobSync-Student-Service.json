@@ -1,0 +1,9 @@
+{
+  "info": {
+    "_postman_id": "jobsync-student-service-collection",
+    "name": "JobSync - Student Service",
+    "description": "Postman API Collection for JobSync Student Microservice endpoints (Profiles, Applications, AI, Resumes, Notifications).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": []
+}

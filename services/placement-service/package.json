@@ -1,0 +1,18 @@
+{
+  "name": "jobsync-placement-service",
+  "version": "0.1.0",
+  "description": "Placement Microservice for JobSync - Placement Drive Management System",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}

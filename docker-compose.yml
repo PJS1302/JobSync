@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  student-service:
+    build:
+      context: ./services/student-service
+    container_name: jobsync-student-service
+    ports:
+      - "5001:5001"
+    environment:
+      - PORT=5001
+      - NODE_ENV=development
+      - MONGODB_URI=mongodb://student-db:27017/jobsync_student_db
+      - PLACEMENT_SERVICE_URL=http://placement-service:5002/api/v1
+    depends_on:
+      - student-db
+    networks:
+      - jobsync-network
+
+  placement-service:
+    build:
+      context: ./services/placement-service
+    container_name: jobsync-placement-service
+    ports:
+      - "5002:5002"
+    environment:
+      - PORT=5002
+      - NODE_ENV=development
+      - MONGODB_URI=mongodb://placement-db:27017/jobsync_placement_db
+      - STUDENT_SERVICE_URL=http://student-service:5001/api/v1
+    depends_on:
+      - placement-db
+    networks:
+      - jobsync-network
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: jobsync-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_STUDENT_SERVICE_URL=http://localhost:5001/api/v1
+      - VITE_PLACEMENT_SERVICE_URL=http://localhost:5002/api/v1
+    networks:
+      - jobsync-network
+
+  student-db:
+    image: mongo:6.0
+    container_name: jobsync-student-db
+    ports:
+      - "27017:27017"
+    volumes:
+      - student-db-data:/data/db
+    networks:
+      - jobsync-network
+
+  placement-db:
+    image: mongo:6.0
+    container_name: jobsync-placement-db
+    ports:
+      - "27018:27017"
+    volumes:
+      - placement-db-data:/data/db
+    networks:
+      - jobsync-network
+
+networks:
+  jobsync-network:
+    driver: bridge
+
+volumes:
+  student-db-data:
+  placement-db-data:

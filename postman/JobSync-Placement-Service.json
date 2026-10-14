@@ -1,0 +1,9 @@
+{
+  "info": {
+    "_postman_id": "jobsync-placement-service-collection",
+    "name": "JobSync - Placement Service",
+    "description": "Postman API Collection for JobSync Placement Microservice endpoints (Companies, Drives, Eligibility, Interviews, Analytics).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": []
+}

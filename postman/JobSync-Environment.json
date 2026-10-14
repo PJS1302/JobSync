@@ -1,0 +1,17 @@
+{
+  "id": "jobsync-environment-id",
+  "name": "JobSync Local Environment",
+  "values": [
+    {
+      "key": "STUDENT_SERVICE_URL",
+      "value": "http://localhost:5001/api/v1",
+      "enabled": true
+    },
+    {
+      "key": "PLACEMENT_SERVICE_URL",
+      "value": "http://localhost:5002/api/v1",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment"
+}
