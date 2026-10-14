@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import NotificationBell from './NotificationBell';
 import {
   getNotifications,
@@ -8,9 +8,12 @@ import {
 } from '../../services/notificationService';
 
 /**
- * Common Navbar component using Tailwind CSS with live NotificationBell
+ * Common Navbar component with live NotificationBell and portal indicator
  */
 export default function Navbar({ onToggleSidebar }) {
+  const location = useLocation();
+  const isAdmin = location.pathname.startsWith('/admin');
+
   const [notifications, setNotifications] = useState([]);
 
   const loadNotifications = async () => {
@@ -60,8 +63,12 @@ export default function Navbar({ onToggleSidebar }) {
           </button>
         )}
 
-        <Link to="/" className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+        <Link to={isAdmin ? '/admin/dashboard' : '/'} className="flex items-center gap-2.5">
+          <div className={`w-9 h-9 rounded-lg flex items-center justify-center shadow-lg ${
+            isAdmin
+              ? 'bg-gradient-to-tr from-amber-600 to-indigo-600 shadow-amber-500/20'
+              : 'bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-blue-500/20'
+          }`}>
             <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
               <path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z" />
             </svg>
@@ -69,12 +76,37 @@ export default function Navbar({ onToggleSidebar }) {
           <span className="text-lg font-bold tracking-tight text-white">JobSync</span>
         </Link>
 
-        <span className="hidden sm:inline-flex px-2.5 py-0.5 text-xs font-semibold rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-          Placement Portal
-        </span>
+        {isAdmin ? (
+          <span className="hidden sm:inline-flex px-2.5 py-0.5 text-xs font-semibold rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            Placement Officer Portal
+          </span>
+        ) : (
+          <span className="hidden sm:inline-flex px-2.5 py-0.5 text-xs font-semibold rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
+            Student Portal
+          </span>
+        )}
       </div>
 
       <div className="flex items-center gap-4">
+        {/* Quick Portal Switcher button */}
+        {isAdmin ? (
+          <Link
+            to="/dashboard"
+            className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700/80 border border-slate-700/80 text-xs font-semibold text-slate-300 hover:text-white transition-all"
+          >
+            <span>Student View</span>
+            <span className="text-[10px] text-slate-400">↗</span>
+          </Link>
+        ) : (
+          <Link
+            to="/admin/dashboard"
+            className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/20 text-xs font-semibold text-blue-400 hover:text-blue-300 transition-all"
+          >
+            <span>Placement Officer</span>
+            <span className="text-[10px] text-blue-400">→</span>
+          </Link>
+        )}
+
         {/* Notification Bell */}
         <NotificationBell
           notifications={notifications}
@@ -84,19 +116,31 @@ export default function Navbar({ onToggleSidebar }) {
         />
 
         {/* User avatar menu */}
-        <Link
-          to="/profile"
-          className="flex items-center gap-3 pl-3 border-l border-slate-800 hover:opacity-85 transition-opacity"
-          title="View Student Profile"
-        >
-          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold text-xs flex items-center justify-center ring-2 ring-slate-800">
-            JS
+        {isAdmin ? (
+          <div className="flex items-center gap-3 pl-3 border-l border-slate-800">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-amber-500 to-indigo-600 text-white font-semibold text-xs flex items-center justify-center ring-2 ring-slate-800">
+              PO
+            </div>
+            <div className="hidden sm:block text-left">
+              <div className="text-xs font-semibold text-white">Dr. K. Raman</div>
+              <div className="text-[11px] text-slate-400">Head • Placement Cell</div>
+            </div>
           </div>
-          <div className="hidden sm:block text-left">
-            <div className="text-xs font-semibold text-white">Alex Rivera</div>
-            <div className="text-[11px] text-slate-400">22CS104 • CSE</div>
-          </div>
-        </Link>
+        ) : (
+          <Link
+            to="/profile"
+            className="flex items-center gap-3 pl-3 border-l border-slate-800 hover:opacity-85 transition-opacity"
+            title="View Student Profile"
+          >
+            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold text-xs flex items-center justify-center ring-2 ring-slate-800">
+              JS
+            </div>
+            <div className="hidden sm:block text-left">
+              <div className="text-xs font-semibold text-white">Alex Rivera</div>
+              <div className="text-[11px] text-slate-400">22CS104 • CSE</div>
+            </div>
+          </Link>
+        )}
       </div>
     </header>
   );

@@ -12,6 +12,7 @@ const STATUS_MAP = {
   pending: { label: 'Pending', bg: 'bg-amber-500/10 text-amber-400 border-amber-500/20', dot: 'bg-amber-400' },
   rejected: { label: 'Rejected', bg: 'bg-rose-500/10 text-rose-400 border-rose-500/20', dot: 'bg-rose-400' },
   ineligible: { label: 'Not Eligible', bg: 'bg-rose-500/10 text-rose-400 border-rose-500/20', dot: 'bg-rose-400' },
+  published: { label: 'Published', bg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', dot: 'bg-emerald-400' },
   closed: { label: 'Closed', bg: 'bg-slate-500/10 text-slate-400 border-slate-500/20', dot: 'bg-slate-400' }
 };
 
