@@ -7,10 +7,11 @@ import Drives from './pages/student/Drives';
 import DriveDetails from './pages/student/DriveDetails';
 import Applications from './pages/student/Applications';
 import ApplicationDetails from './pages/student/ApplicationDetails';
+import Resume from './pages/student/Resume';
 import Placeholder from './pages/Placeholder';
 
 /**
- * App Routing with Student Dashboard, Profile, Drives, and Applications
+ * App Routing with Student Dashboard, Profile, Drives, Applications, and Resume Analysis
  */
 export default function App() {
   return (
@@ -24,8 +25,8 @@ export default function App() {
           <Route path="drives/:id" element={<DriveDetails />} />
           <Route path="applications" element={<Applications />} />
           <Route path="applications/:id" element={<ApplicationDetails />} />
+          <Route path="resume" element={<Resume />} />
           <Route path="interviews" element={<Placeholder title="Interview Schedule" />} />
-          <Route path="resume" element={<Placeholder title="AI Resume & Skills" />} />
           <Route path="notifications" element={<Placeholder title="Notifications & Alerts" />} />
           <Route path="*" element={<Placeholder title="Page Not Found (404)" />} />
         </Route>
