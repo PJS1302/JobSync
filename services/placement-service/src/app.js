@@ -24,6 +24,7 @@ app.use('/api/drives', require('./routes/driveRoutes'));
 app.use('/api/eligibility', require('./routes/eligibilityRoutes'));
 app.use('/api/screening', require('./routes/screeningRoutes'));
 app.use('/api/interviews', require('./routes/interviewRoutes'));
+app.use('/api/analytics', require('./routes/analyticsRoutes'));
 
 // ── Error handling ────────────────────────────────────────────────────────────
 app.use(notFound);

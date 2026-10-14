@@ -223,6 +223,54 @@ const createNotification = async (notificationData) => {
   return await response.json();
 };
 
+/**
+ * Fetch application statistics or list from Student Service REST API.
+ * @returns {Promise<object|null>}
+ */
+const getApplicationStats = async () => {
+  const url = buildUrl('/applications');
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    });
+    if (response.ok) {
+      const data = await response.json();
+      if (Array.isArray(data)) return { count: data.length, applications: data };
+      if (data && Array.isArray(data.data)) return { count: data.data.length, applications: data.data };
+      if (data && Array.isArray(data.applications)) return { count: data.applications.length, applications: data.applications };
+      if (data && typeof data.total === 'number') return { count: data.total, applications: data.applications || [] };
+      if (data && typeof data.count === 'number') return { count: data.count, applications: data.applications || [] };
+    }
+  } catch (_) {
+    // Graceful fallback if Student Service applications endpoint is unavailable
+  }
+  return null;
+};
+
+/**
+ * Fetch placement statistics or list from Student Service REST API.
+ * @returns {Promise<Array>}
+ */
+const getPlacementsStats = async () => {
+  const url = buildUrl('/placements');
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    });
+    if (response.ok) {
+      const data = await response.json();
+      if (Array.isArray(data)) return data;
+      if (data && Array.isArray(data.data)) return data.data;
+      if (data && Array.isArray(data.placements)) return data.placements;
+    }
+  } catch (_) {
+    // Graceful fallback
+  }
+  return [];
+};
+
 module.exports = {
   getBaseUrl,
   buildUrl,
@@ -231,4 +279,6 @@ module.exports = {
   updateApplicationStatus,
   createOrUpdatePlacement,
   createNotification,
+  getApplicationStats,
+  getPlacementsStats,
 };
