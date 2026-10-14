@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 
 const studentRoutes = require('./routes/studentRoutes');
+const applicationRoutes = require('./routes/applicationRoutes');
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 
 const app = express();
@@ -22,6 +23,8 @@ app.get('/health', (req, res) => {
 // ── Route mounts ──────────────────────────────────────────────────────────────
 app.use('/api/students', studentRoutes);
 app.use('/api/v1/students', studentRoutes);
+app.use('/api/applications', applicationRoutes);
+app.use('/api/v1/applications', applicationRoutes);
 
 // ── Error handling ────────────────────────────────────────────────────────────
 app.use(notFound);
