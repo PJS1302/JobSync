@@ -122,6 +122,21 @@ const updateScreening = async (id, data) => {
     throw err;
   }
 
+  if (data.decision && ['SHORTLISTED', 'SELECTED', 'REJECTED'].includes(data.decision)) {
+    try {
+      const { executeCandidateSelection } = require('./interviewService');
+      await executeCandidateSelection({
+        driveId: screening.driveId,
+        applicationId: screening.applicationId,
+        studentId: screening.studentId,
+        decision: data.decision,
+        remarks: data.remarks || screening.remarks,
+      });
+    } catch (_) {
+      // Continue even if remote notification/placement had warning
+    }
+  }
+
   return screening;
 };
 

@@ -29,8 +29,8 @@ const screeningSchema = new mongoose.Schema(
     decision: {
       type: String,
       enum: {
-        values: ['PENDING', 'SHORTLISTED', 'REJECTED'],
-        message: 'Decision must be PENDING, SHORTLISTED, or REJECTED',
+        values: ['PENDING', 'SHORTLISTED', 'SELECTED', 'REJECTED'],
+        message: 'Decision must be PENDING, SHORTLISTED, SELECTED, or REJECTED',
       },
       default: 'PENDING',
     },
