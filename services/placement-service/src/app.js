@@ -22,6 +22,7 @@ app.get('/health', (req, res) => {
 app.use('/api/companies', require('./routes/companyRoutes'));
 app.use('/api/drives', require('./routes/driveRoutes'));
 app.use('/api/eligibility', require('./routes/eligibilityRoutes'));
+app.use('/api/screening', require('./routes/screeningRoutes'));
 
 // ── Error handling ────────────────────────────────────────────────────────────
 app.use(notFound);
