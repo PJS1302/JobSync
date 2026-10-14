@@ -1,19 +1,21 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/common/Layout';
-import Home from './pages/Home';
+import StudentDashboard from './pages/student/Dashboard';
+import StudentProfile from './pages/student/Profile';
 import Placeholder from './pages/Placeholder';
 
 /**
- * App Routing Foundation
+ * App Routing with Student Dashboard and Profile
  */
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Layout />}>
-          <Route index element={<Home />} />
-          <Route path="dashboard" element={<Home />} />
+          <Route index element={<StudentDashboard />} />
+          <Route path="dashboard" element={<StudentDashboard />} />
+          <Route path="profile" element={<StudentProfile />} />
           <Route path="drives" element={<Placeholder title="Placement Drives" />} />
           <Route path="applications" element={<Placeholder title="My Applications" />} />
           <Route path="interviews" element={<Placeholder title="Interview Schedule" />} />

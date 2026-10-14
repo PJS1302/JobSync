@@ -1,181 +1,234 @@
 import React, { useState, useEffect } from 'react';
-import StatusBadge from '../../components/common/StatusBadge';
+import { Link } from 'react-router-dom';
 import Button from '../../components/common/Button';
+import StatusBadge from '../../components/common/StatusBadge';
 import Loader from '../../components/common/Loader';
-import { getDashboardOverview, applyToDrive } from '../../services/studentService';
-import { formatDate, formatDateTime, getDaysRemaining, getRelativeTime } from '../../utils/formatDate';
+import { getStudentDashboard } from '../../services/studentService';
 
 /**
- * Student Dashboard Module – JobSync Placement Drive Management System
+ * Student Dashboard Module
+ * Displays 6 core placement metrics with loading, error, and empty states
  */
 export default function StudentDashboard() {
-  const [data, setData] = useState(null);
+  const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [driveFilter, setDriveFilter] = useState('all'); // 'all' | 'eligible' | 'dream'
-  const [toastMessage, setToastMessage] = useState(null);
-  const [appliedDriveIds, setAppliedDriveIds] = useState(new Set());
+  const [error, setError] = useState(null);
+  const [isLiveApi, setIsLiveApi] = useState(false);
 
-  // Show transient toast notification
-  const triggerToast = (msg) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3500);
-  };
-
-  // Load dashboard overview data
-  const loadData = async (isRefresh = false) => {
-    if (isRefresh) setRefreshing(true);
-    else setLoading(true);
-
+  const fetchDashboard = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const res = await getDashboardOverview();
+      const res = await getStudentDashboard();
       if (res.success && res.data) {
-        setData(res.data);
+        setDashboardData(res.data);
+        setIsLiveApi(Boolean(res.isLive));
+      } else {
+        throw new Error(res.message || 'Failed to load dashboard data');
       }
     } catch (err) {
-      triggerToast('Error loading dashboard data. Showing local snapshot.');
+      setError(err.message || 'Error communicating with Student Service API');
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   };
 
   useEffect(() => {
-    loadData();
+    fetchDashboard();
   }, []);
 
-  // Handle Quick Apply action
-  const handleApply = async (drive) => {
-    if (appliedDriveIds.has(drive.id)) return;
-
-    const res = await applyToDrive(drive.id);
-    if (res.success) {
-      setAppliedDriveIds((prev) => new Set([...prev, drive.id]));
-      triggerToast(`Application submitted successfully for ${drive.companyName}!`);
-    } else {
-      triggerToast(res.message || 'Failed to submit application');
-    }
-  };
-
+  // 1. Loading State
   if (loading) {
     return (
-      <div className="page-wrapper" style={{ display: 'flex', minHeight: '60vh', alignItems: 'center', justifyContent: 'center' }}>
-        <Loader text="Loading your placement dashboard & drive matches..." size={38} />
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <Loader size="lg" text="Loading placement metrics and drive statuses..." />
       </div>
     );
   }
 
-  const { student, metrics, placementDrives = [], applications = [], interviews = [], notifications = [] } = data || {};
+  // 2. Error State
+  if (error && !dashboardData) {
+    return (
+      <div className="min-h-[50vh] flex flex-col items-center justify-center text-center p-6 bg-slate-900/60 border border-red-500/30 rounded-2xl max-w-xl mx-auto my-12">
+        <div className="w-12 h-12 rounded-full bg-red-500/10 text-red-400 flex items-center justify-center text-xl mb-4">
+          ⚠️
+        </div>
+        <h2 className="text-lg font-bold text-white mb-2">Unable to Load Dashboard</h2>
+        <p className="text-sm text-slate-400 mb-6">{error}</p>
+        <div className="flex gap-3">
+          <Button variant="primary" size="sm" onClick={fetchDashboard}>
+            Retry Request
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setError(null);
+              setDashboardData({
+                stats: { eligibleDrives: 0, applications: 0, shortlisted: 0, upcomingInterviews: 0, selected: 0, unreadNotifications: 0 },
+                recentApplications: [],
+                upcomingInterviews: []
+              });
+            }}
+          >
+            Show Empty Dashboard
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
-  // Filter placement drives
-  const filteredDrives = placementDrives.filter((drive) => {
-    if (driveFilter === 'eligible') return drive.isEligible;
-    if (driveFilter === 'dream') return drive.category === 'Dream' || drive.category === 'Super Dream';
-    return true;
-  });
+  const { stats, profile, recentApplications = [], upcomingInterviews = [] } = dashboardData || {};
+
+  // Check if everything is completely empty
+  const isAllEmpty =
+    !stats ||
+    (stats.eligibleDrives === 0 &&
+      stats.applications === 0 &&
+      stats.shortlisted === 0 &&
+      stats.upcomingInterviews === 0 &&
+      stats.selected === 0 &&
+      stats.unreadNotifications === 0);
 
   return (
-    <div className="page-wrapper" id="student-dashboard-root">
-      {/* Toast alert banner */}
-      {toastMessage && (
-        <div className="toast-notice" id="dashboard-toast-notice">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-            <polyline points="22 4 12 14.01 9 11.01" />
-          </svg>
-          <span style={{ fontSize: '0.85rem', color: '#fff', fontWeight: 500 }}>{toastMessage}</span>
+    <div className="space-y-8 max-w-7xl mx-auto">
+      {/* Dashboard Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900/80 to-slate-950 border border-slate-800 shadow-xl">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <h1 className="text-2xl font-extrabold text-white tracking-tight">
+              Welcome back, {profile?.name || 'Student Candidate'}! 🎓
+            </h1>
+            <span
+              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                isLiveApi
+                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                  : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+              }`}
+            >
+              {isLiveApi ? '● Live API' : '● Local Cache'}
+            </span>
+          </div>
+          <p className="text-xs md:text-sm text-slate-400">
+            {profile?.department || 'Computer Science & Engineering'} • Roll: 22CS104 • CGPA:{' '}
+            <strong className="text-white">{profile?.cgpa || '8.72'}</strong>
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Link to="/profile">
+            <Button variant="outline" size="sm">
+              Edit Profile
+            </Button>
+          </Link>
+          <Button variant="primary" size="sm" onClick={fetchDashboard}>
+            Refresh
+          </Button>
+        </div>
+      </div>
+
+      {/* 3. Empty State Notification if no activity */}
+      {isAllEmpty && (
+        <div className="p-4 rounded-xl bg-slate-900/40 border border-dashed border-slate-700 text-center text-sm text-slate-400">
+          No placement drive activity or applications recorded yet. Eligible drives will appear here once announced.
         </div>
       )}
 
-      {/* Top Welcome / Profile Header Banner */}
-      <section className="welcome-banner" aria-label="Student Overview">
-        <div className="welcome-info">
-          <h1>Welcome back, {student?.name || 'Candidate'}! 🎓</h1>
-          <div className="welcome-meta">
-            <span className="welcome-tag">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="2" y="7" width="20" height="14" rx="2" />
-                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
-              </svg>
-              Roll: <strong>{student?.rollNumber || '22CS104'}</strong>
-            </span>
-            <span className="welcome-tag">
-              Dept: <strong>{student?.department || 'Computer Science'}</strong>
-            </span>
-            <span className="welcome-tag cgpa-highlight">
-              CGPA: <strong>{student?.cgpa || '8.72'} / 10</strong>
-            </span>
-            <span className="welcome-tag" style={{ color: '#34d399' }}>
-              ✓ All Clear (0 Backlogs)
-            </span>
-          </div>
-        </div>
-
-        <div className="welcome-actions">
-          <Button
-            id="btn-refresh-dashboard"
-            variant="outline"
-            size="sm"
-            onClick={() => loadData(true)}
-            loading={refreshing}
-            icon={
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.19" />
-              </svg>
-            }
-          >
-            Refresh Feed
-          </Button>
-          <Button
-            id="btn-view-resume-match"
-            variant="primary"
-            size="sm"
-            onClick={() => triggerToast(`Current AI Resume Match Score: ${student?.resumeMatchScore || 92}%`)}
-          >
-            AI Resume: {student?.resumeMatchScore || 92}%
-          </Button>
-        </div>
-      </section>
-
-      {/* 4 Summary Stat Cards */}
-      <section className="stats-grid" aria-label="Placement Drive Key Metrics">
-        <div className="stat-card" id="card-stat-drives">
-          <div className="stat-card-header">
-            <span className="stat-title">Active Placement Drives</span>
-            <div className="stat-icon-wrapper" style={{ background: 'rgba(59, 130, 246, 0.15)', color: '#38bdf8' }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      {/* 6 Required Dashboard Cards Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {/* Card 1: Eligible Drives */}
+        <div
+          id="card-eligible-drives"
+          className="p-5 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition-all shadow-md flex flex-col justify-between"
+        >
+          <div className="flex items-start justify-between">
+            <div>
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                Eligible Drives
+              </span>
+              <div className="text-3xl font-extrabold text-white mt-1">
+                {stats?.eligibleDrives ?? 0}
+              </div>
+            </div>
+            <div className="w-10 h-10 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
                 <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
               </svg>
             </div>
           </div>
-          <div className="stat-value">{metrics?.activeDrivesCount || 14}</div>
-          <div className="stat-subtext" style={{ color: '#34d399' }}>
-            <span>↑ 3 new posted this week</span>
+          <div className="text-xs text-emerald-400 font-medium mt-3 flex items-center gap-1">
+            <span>✓</span> Meets GPA & department criteria
           </div>
         </div>
 
-        <div className="stat-card" id="card-stat-applications">
-          <div className="stat-card-header">
-            <span className="stat-title">Submitted Applications</span>
-            <div className="stat-icon-wrapper" style={{ background: 'rgba(168, 85, 247, 0.15)', color: '#c084fc' }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        {/* Card 2: Applications */}
+        <div
+          id="card-applications"
+          className="p-5 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition-all shadow-md flex flex-col justify-between"
+        >
+          <div className="flex items-start justify-between">
+            <div>
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                Applications
+              </span>
+              <div className="text-3xl font-extrabold text-white mt-1">
+                {stats?.applications ?? 0}
+              </div>
+            </div>
+            <div className="w-10 h-10 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                 <polyline points="14 2 14 8 20 8" />
               </svg>
             </div>
           </div>
-          <div className="stat-value">{metrics?.applicationsSubmittedCount || 5}</div>
-          <div className="stat-subtext">
-            <span>2 currently under active review</span>
+          <div className="text-xs text-slate-400 mt-3">
+            Active drive applications submitted
           </div>
         </div>
 
-        <div className="stat-card" id="card-stat-interviews">
-          <div className="stat-card-header">
-            <span className="stat-title">Scheduled Interviews</span>
-            <div className="stat-icon-wrapper" style={{ background: 'rgba(6, 182, 212, 0.15)', color: '#22d3ee' }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        {/* Card 3: Shortlisted */}
+        <div
+          id="card-shortlisted"
+          className="p-5 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition-all shadow-md flex flex-col justify-between"
+        >
+          <div className="flex items-start justify-between">
+            <div>
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                Shortlisted
+              </span>
+              <div className="text-3xl font-extrabold text-indigo-400 mt-1">
+                {stats?.shortlisted ?? 0}
+              </div>
+            </div>
+            <div className="w-10 h-10 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+          </div>
+          <div className="text-xs text-indigo-300 font-medium mt-3">
+            Qualified past initial screening
+          </div>
+        </div>
+
+        {/* Card 4: Upcoming Interviews */}
+        <div
+          id="card-upcoming-interviews"
+          className="p-5 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition-all shadow-md flex flex-col justify-between"
+        >
+          <div className="flex items-start justify-between">
+            <div>
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                Upcoming Interviews
+              </span>
+              <div className="text-3xl font-extrabold text-amber-400 mt-1">
+                {stats?.upcomingInterviews ?? 0}
+              </div>
+            </div>
+            <div className="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                 <line x1="16" y1="2" x2="16" y2="6" />
                 <line x1="8" y1="2" x2="8" y2="6" />
@@ -183,318 +236,125 @@ export default function StudentDashboard() {
               </svg>
             </div>
           </div>
-          <div className="stat-value">{metrics?.upcomingInterviewsCount || 2}</div>
-          <div className="stat-subtext" style={{ color: '#fbbf24' }}>
-            <span>Next: Tomorrow @ 10:00 AM</span>
+          <div className="text-xs text-amber-300 font-medium mt-3">
+            Next: Tomorrow @ 10:00 AM
           </div>
         </div>
 
-        <div className="stat-card" id="card-stat-offers">
-          <div className="stat-card-header">
-            <span className="stat-title">Placement Offers</span>
-            <div className="stat-icon-wrapper" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#34d399' }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        {/* Card 5: Selected */}
+        <div
+          id="card-selected"
+          className="p-5 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition-all shadow-md flex flex-col justify-between"
+        >
+          <div className="flex items-start justify-between">
+            <div>
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                Selected
+              </span>
+              <div className="text-3xl font-extrabold text-emerald-400 mt-1">
+                {stats?.selected ?? 0}
+              </div>
+            </div>
+            <div className="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <circle cx="12" cy="8" r="7" />
                 <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" />
               </svg>
             </div>
           </div>
-          <div className="stat-value">{metrics?.offersCount || 1} Offer</div>
-          <div className="stat-subtext" style={{ color: '#34d399' }}>
-            <span>Dream Tier: {metrics?.dreamOfferPackage || '₹18.5 LPA'}</span>
+          <div className="text-xs text-emerald-400 font-medium mt-3">
+            Final job offer confirmed
           </div>
         </div>
-      </section>
 
-      {/* Main Dashboard Multi-column Content Grid */}
-      <div className="dashboard-grid">
-        {/* Left Column: Drives & Applications Tracking */}
-        <div className="dashboard-column">
-          {/* Active & Recommended Drives Section */}
-          <section className="glass-panel" aria-labelledby="drives-section-title">
-            <div className="panel-header">
-              <div className="panel-title-group">
-                <h2 id="drives-section-title" className="panel-title">Active & Recommended Drives</h2>
-                <span className="panel-count">{filteredDrives.length}</span>
-              </div>
-
-              {/* Drive Filter Tabs */}
-              <div style={{ display: 'flex', gap: '0.4rem' }}>
-                <Button
-                  id="tab-filter-all"
-                  variant={driveFilter === 'all' ? 'primary' : 'ghost'}
-                  size="sm"
-                  onClick={() => setDriveFilter('all')}
-                >
-                  All
-                </Button>
-                <Button
-                  id="tab-filter-eligible"
-                  variant={driveFilter === 'eligible' ? 'primary' : 'ghost'}
-                  size="sm"
-                  onClick={() => setDriveFilter('eligible')}
-                >
-                  Eligible Only
-                </Button>
-                <Button
-                  id="tab-filter-dream"
-                  variant={driveFilter === 'dream' ? 'primary' : 'ghost'}
-                  size="sm"
-                  onClick={() => setDriveFilter('dream')}
-                >
-                  Dream Tier
-                </Button>
-              </div>
-            </div>
-
-            <div className="drives-list">
-              {filteredDrives.map((drive) => {
-                const isAlreadyApplied = appliedDriveIds.has(drive.id);
-                const deadlineRemaining = getDaysRemaining(drive.deadline);
-
-                return (
-                  <article key={drive.id} className="drive-card" id={`drive-card-${drive.id}`}>
-                    <div className="drive-card-top">
-                      <div className="company-identity">
-                        <div className="company-logo-box">{drive.logoChar}</div>
-                        <div>
-                          <h3 className="role-title">{drive.role}</h3>
-                          <div className="company-name">{drive.companyName} • {drive.location}</div>
-                        </div>
-                      </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <StatusBadge
-                          status={drive.isEligible ? 'eligible' : 'ineligible'}
-                          label={drive.isEligible ? 'Eligible' : 'Min CGPA 8.8'}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="drive-tags-row">
-                      <span className="meta-pill salary-pill">{drive.ctc}</span>
-                      <span className="meta-pill match-score-pill">
-                        ⚡ {drive.matchScore}% Skill Match
-                      </span>
-                      <span className="meta-pill">
-                        Category: <strong style={{ color: '#fff', marginLeft: 4 }}>{drive.category}</strong>
-                      </span>
-                      {drive.requiredSkills?.map((skill) => (
-                        <span key={skill} className="meta-pill" style={{ opacity: 0.85 }}>
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-
-                    <div className="drive-card-footer">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <circle cx="12" cy="12" r="10" />
-                          <polyline points="12 6 12 12 16 14" />
-                        </svg>
-                        <span>Deadline: {formatDate(drive.deadline)} ({deadlineRemaining})</span>
-                      </div>
-
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <Button
-                          id={`btn-apply-${drive.id}`}
-                          variant={isAlreadyApplied ? 'outline' : drive.isEligible ? 'primary' : 'outline'}
-                          size="sm"
-                          disabled={!drive.isEligible || isAlreadyApplied}
-                          onClick={() => handleApply(drive)}
-                        >
-                          {isAlreadyApplied ? 'Applied ✓' : drive.isEligible ? 'Quick Apply' : 'Ineligible'}
-                        </Button>
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          </section>
-
-          {/* Applications Tracking Section */}
-          <section className="glass-panel" aria-labelledby="applications-section-title">
-            <div className="panel-header">
-              <div className="panel-title-group">
-                <h2 id="applications-section-title" className="panel-title">My Application Progress</h2>
-                <span className="panel-count">{applications.length} Active</span>
-              </div>
-            </div>
-
-            <div className="applications-table-wrapper">
-              <table className="applications-table">
-                <thead>
-                  <tr>
-                    <th>Company & Role</th>
-                    <th>Applied On</th>
-                    <th>Current Stage</th>
-                    <th>Progress</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {applications.map((app) => (
-                    <tr key={app.id} id={`app-row-${app.id}`}>
-                      <td>
-                        <div className="app-company-cell">{app.companyName}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{app.role}</div>
-                      </td>
-                      <td>{formatDate(app.appliedDate)}</td>
-                      <td>
-                        <span style={{ color: '#fff', fontWeight: 500 }}>{app.stage}</span>
-                      </td>
-                      <td>
-                        <div className="stage-tracker" title={`Stage ${app.stageNumber} of ${app.totalStages}`}>
-                          {Array.from({ length: app.totalStages }).map((_, idx) => {
-                            const isDone = idx + 1 < app.stageNumber;
-                            const isCurr = idx + 1 === app.stageNumber;
-                            return (
-                              <div
-                                key={idx}
-                                className={`stage-step ${isDone ? 'completed' : isCurr ? 'current' : ''}`}
-                              />
-                            );
-                          })}
-                        </div>
-                      </td>
-                      <td>
-                        <StatusBadge status={app.status} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        </div>
-
-        {/* Right Column: Interviews, AI Insights, Alerts */}
-        <div className="dashboard-column">
-          {/* Upcoming Interview Schedule Card */}
-          <section className="glass-panel" aria-labelledby="interviews-section-title">
-            <div className="panel-header">
-              <div className="panel-title-group">
-                <h2 id="interviews-section-title" className="panel-title">Upcoming Interviews</h2>
-                <span className="panel-count">{interviews.length}</span>
-              </div>
-            </div>
-
+        {/* Card 6: Unread Notifications */}
+        <div
+          id="card-unread-notifications"
+          className="p-5 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition-all shadow-md flex flex-col justify-between"
+        >
+          <div className="flex items-start justify-between">
             <div>
-              {interviews.length === 0 ? (
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No upcoming interviews scheduled.</p>
-              ) : (
-                interviews.map((interview) => (
-                  <div key={interview.id} className="interview-card" id={`interview-${interview.id}`}>
-                    <div className="interview-header">
-                      <div>
-                        <div className="interview-company">{interview.companyName}</div>
-                        <div className="interview-round-name">{interview.roundTitle}</div>
-                      </div>
-                      <StatusBadge status={interview.status} />
-                    </div>
-
-                    <div className="interview-meta-row">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="10" />
-                        <polyline points="12 6 12 12 16 14" />
-                      </svg>
-                      <span>{formatDateTime(interview.scheduledTime)}</span>
-                    </div>
-
-                    <div className="interview-meta-row" style={{ marginTop: '0.25rem' }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polygon points="23 7 16 12 23 17 23 7" />
-                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
-                      </svg>
-                      <span>Platform: <strong style={{ color: '#fff' }}>{interview.platform}</strong></span>
-                    </div>
-
-                    {interview.meetingLink && (
-                      <div style={{ marginTop: '0.85rem' }}>
-                        <Button
-                          id={`btn-join-${interview.id}`}
-                          variant="primary"
-                          size="sm"
-                          style={{ width: '100%' }}
-                          onClick={() => triggerToast(`Opening interview link: ${interview.meetingLink}`)}
-                        >
-                          Join Video Call
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
-          </section>
-
-          {/* AI Resume & Skill Gap Analysis Widget */}
-          <section className="glass-panel" aria-labelledby="ai-insights-title">
-            <div className="panel-header">
-              <div className="panel-title-group">
-                <h2 id="ai-insights-title" className="panel-title">AI Resume Intelligence</h2>
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                Unread Notifications
+              </span>
+              <div className="text-3xl font-extrabold text-cyan-400 mt-1">
+                {stats?.unreadNotifications ?? 0}
               </div>
             </div>
-
-            <div className="ai-insight-box">
-              <div className="ai-score-row">
-                <div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Overall Drive Compatibility</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Analyzed from {student?.resumeName || 'Resume.pdf'}</div>
-                </div>
-                <div className="ai-score-number">{student?.resumeMatchScore || 92}%</div>
-              </div>
-
-              <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#e2e8f0', marginTop: '0.5rem' }}>
-                Extracted High-Demand Skills
-              </div>
-              <div className="skills-tags-cluster">
-                {student?.extractedSkills?.map((skill) => (
-                  <span key={skill} className="skill-tag">
-                    {skill}
-                  </span>
-                ))}
-              </div>
-
-              <div style={{ marginTop: '0.85rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                <div style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>
-                  💡 <strong>Skill Recommendation:</strong> Adding <em>GraphQL</em> and <em>Kubernetes</em> will increase eligibility for 4 additional dream companies.
-                </div>
-              </div>
+            <div className="w-10 h-10 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
             </div>
-          </section>
+          </div>
+          <div className="text-xs text-cyan-300 font-medium mt-3">
+            Important updates from Placement Cell
+          </div>
+        </div>
+      </div>
 
-          {/* In-App Placement Alerts */}
-          <section className="glass-panel" aria-labelledby="announcements-title">
-            <div className="panel-header">
-              <div className="panel-title-group">
-                <h2 id="announcements-title" className="panel-title">Placement Cell Notices</h2>
-              </div>
+      {/* Recent Applications & Upcoming Interviews Overview */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Applications List */}
+        <div className="p-6 rounded-2xl bg-slate-900/50 border border-slate-800 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold text-white">Application Pipeline</h2>
+            <span className="text-xs text-slate-400">{recentApplications.length} Recorded</span>
+          </div>
+
+          {recentApplications.length === 0 ? (
+            <div className="p-8 text-center text-sm text-slate-500 border border-dashed border-slate-800 rounded-xl">
+              No recent applications found.
             </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {notifications.map((notif) => (
+          ) : (
+            <div className="space-y-3">
+              {recentApplications.map((app) => (
                 <div
-                  key={notif.id}
-                  style={{
-                    padding: '0.75rem',
-                    borderRadius: 'var(--radius-sm)',
-                    background: 'rgba(255, 255, 255, 0.03)',
-                    border: '1px solid var(--border-subtle)'
-                  }}
+                  key={app.id}
+                  className="p-3.5 rounded-xl bg-slate-800/40 border border-slate-700/50 flex items-center justify-between gap-3"
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.2rem' }}>
-                    <strong style={{ fontSize: '0.8rem', color: '#fff' }}>{notif.title}</strong>
-                    <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>{getRelativeTime(notif.timestamp)}</span>
+                  <div>
+                    <div className="text-sm font-semibold text-white">{app.company}</div>
+                    <div className="text-xs text-slate-400">{app.role} • {app.stage}</div>
                   </div>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-                    {notif.message}
-                  </p>
+                  <StatusBadge status={app.status} />
                 </div>
               ))}
             </div>
-          </section>
+          )}
+        </div>
+
+        {/* Upcoming Interview Schedule */}
+        <div className="p-6 rounded-2xl bg-slate-900/50 border border-slate-800 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold text-white">Interview Schedule</h2>
+            <span className="text-xs text-slate-400">{upcomingInterviews.length} Scheduled</span>
+          </div>
+
+          {upcomingInterviews.length === 0 ? (
+            <div className="p-8 text-center text-sm text-slate-500 border border-dashed border-slate-800 rounded-xl">
+              No upcoming interviews scheduled.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {upcomingInterviews.map((intv) => (
+                <div
+                  key={intv.id}
+                  className="p-3.5 rounded-xl bg-slate-800/40 border border-slate-700/50 flex items-start justify-between gap-3"
+                >
+                  <div>
+                    <div className="text-sm font-semibold text-white">{intv.company}</div>
+                    <div className="text-xs text-slate-400">{intv.round}</div>
+                    <div className="text-[11px] text-blue-400 mt-1 font-medium">
+                      🕒 {intv.date} ({intv.mode})
+                    </div>
+                  </div>
+                  <StatusBadge status="scheduled" />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

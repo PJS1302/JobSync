@@ -43,7 +43,7 @@ export default function Navbar({ onToggleSidebar }) {
         </div>
 
         {/* User avatar menu */}
-        <div className="flex items-center gap-3 pl-3 border-l border-slate-800">
+        <Link to="/profile" className="flex items-center gap-3 pl-3 border-l border-slate-800 hover:opacity-85 transition-opacity" title="View Student Profile">
           <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold text-xs flex items-center justify-center ring-2 ring-slate-800">
             JS
           </div>
@@ -51,7 +51,7 @@ export default function Navbar({ onToggleSidebar }) {
             <div className="text-xs font-semibold text-white">Alex Rivera</div>
             <div className="text-[11px] text-slate-400">22CS104 • CSE</div>
           </div>
-        </div>
+        </Link>
       </div>
     </header>
   );
