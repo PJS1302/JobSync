@@ -20,6 +20,7 @@ app.get('/health', (req, res) => {
 
 // ── API Routes ────────────────────────────────────────────────────────────────
 app.use('/api/companies', require('./routes/companyRoutes'));
+app.use('/api/drives', require('./routes/driveRoutes'));
 
 // ── Error handling ────────────────────────────────────────────────────────────
 app.use(notFound);
