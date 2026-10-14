@@ -18,8 +18,8 @@ app.get('/health', (req, res) => {
   });
 });
 
-// ── Future route mounts go here ───────────────────────────────────────────────
-// e.g. app.use('/api/v1/companies', require('./routes/companyRoutes'));
+// ── API Routes ────────────────────────────────────────────────────────────────
+app.use('/api/companies', require('./routes/companyRoutes'));
 
 // ── Error handling ────────────────────────────────────────────────────────────
 app.use(notFound);
