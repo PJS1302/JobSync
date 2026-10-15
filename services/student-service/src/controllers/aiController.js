@@ -32,7 +32,23 @@ const extractSkills = async (req, res, next) => {
   }
 };
 
+/**
+ * Handle fetching resume AI analysis for the student dashboard.
+ * GET /api/v1/ai/analyze-resume
+ */
+const getResumeAnalysis = async (req, res, next) => {
+  try {
+    const studentId = req.query.studentId || req.body?.studentId;
+    const result = await aiService.getLatestResumeAnalysis(studentId);
+    return sendSuccess(res, result, 200);
+  } catch (err) {
+    return next(err);
+  }
+};
+
 module.exports = {
   matchJob,
   extractSkills,
+  getResumeAnalysis,
 };
+

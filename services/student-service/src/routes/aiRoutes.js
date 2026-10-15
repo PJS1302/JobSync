@@ -5,5 +5,6 @@ const aiController = require('../controllers/aiController');
 router.post('/match', aiController.matchJob);
 router.post('/analyze', aiController.matchJob);
 router.post('/extract-skills', aiController.extractSkills);
+router.get('/analyze-resume', aiController.getResumeAnalysis);
 
 module.exports = router;
