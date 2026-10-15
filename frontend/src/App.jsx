@@ -1,6 +1,13 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import Layout from './components/common/Layout';
+import ProtectedRoute from './components/common/ProtectedRoute';
+import Loader from './components/common/Loader';
+
+// Auth Pages
+import Login from './pages/auth/Login';
+import Register from './pages/auth/Register';
 
 // Student Pages
 import StudentDashboard from './pages/student/Dashboard';
@@ -24,39 +31,129 @@ import AdminAnalytics from './pages/admin/Analytics';
 import Placeholder from './pages/Placeholder';
 
 /**
- * App Routing with Student Portal and Placement Officer Admin Portal
+ * Root Redirect Handler:
+ * When the user enters the system (visiting '/'):
+ * - If not authenticated: directly navigates to '/login'
+ * - If authenticated: navigates to appropriate portal dashboard based on role
+ */
+function RootRedirect() {
+  const { user, isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <Loader size="lg" text="Initializing JobSync..." />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return user?.role === 'admin' ? (
+    <Navigate to="/admin/dashboard" replace />
+  ) : (
+    <Navigate to="/dashboard" replace />
+  );
+}
+
+/**
+ * App Routing with Authentication Provider and Role-based Protected Routes
  */
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          {/* Student Portal Routes */}
-          <Route index element={<StudentDashboard />} />
-          <Route path="dashboard" element={<StudentDashboard />} />
-          <Route path="profile" element={<StudentProfile />} />
-          <Route path="drives" element={<Drives />} />
-          <Route path="drives/:id" element={<DriveDetails />} />
-          <Route path="applications" element={<Applications />} />
-          <Route path="applications/:id" element={<ApplicationDetails />} />
-          <Route path="resume" element={<Resume />} />
-          <Route path="interviews" element={<Interviews />} />
-          <Route path="notifications" element={<Notifications />} />
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Public Auth Routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
 
-          {/* Placement Officer (Admin) Portal Routes */}
-          <Route path="admin">
-            <Route index element={<AdminDashboard />} />
-            <Route path="dashboard" element={<AdminDashboard />} />
-            <Route path="companies" element={<AdminCompanies />} />
-            <Route path="drives" element={<AdminDrives />} />
-            <Route path="applicants" element={<AdminApplicants />} />
-            <Route path="interviews" element={<AdminInterviews />} />
-            <Route path="analytics" element={<AdminAnalytics />} />
+          {/* Root Path: First entry routes straight to Login if unauthenticated */}
+          <Route path="/" element={<RootRedirect />} />
+
+          {/* Protected Application Routes wrapped with Layout */}
+          <Route
+            element={
+              <ProtectedRoute>
+                <Layout />
+              </ProtectedRoute>
+            }
+          >
+            {/* Student Portal Routes */}
+            <Route path="dashboard" element={<StudentDashboard />} />
+            <Route path="profile" element={<StudentProfile />} />
+            <Route path="drives" element={<Drives />} />
+            <Route path="drives/:id" element={<DriveDetails />} />
+            <Route path="applications" element={<Applications />} />
+            <Route path="applications/:id" element={<ApplicationDetails />} />
+            <Route path="resume" element={<Resume />} />
+            <Route path="interviews" element={<Interviews />} />
+            <Route path="notifications" element={<Notifications />} />
+
+            {/* Placement Officer (Admin) Portal Routes */}
+            <Route
+              path="admin"
+              element={
+                <ProtectedRoute allowedRole="admin">
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="admin/dashboard"
+              element={
+                <ProtectedRoute allowedRole="admin">
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="admin/companies"
+              element={
+                <ProtectedRoute allowedRole="admin">
+                  <AdminCompanies />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="admin/drives"
+              element={
+                <ProtectedRoute allowedRole="admin">
+                  <AdminDrives />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="admin/applicants"
+              element={
+                <ProtectedRoute allowedRole="admin">
+                  <AdminApplicants />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="admin/interviews"
+              element={
+                <ProtectedRoute allowedRole="admin">
+                  <AdminInterviews />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="admin/analytics"
+              element={
+                <ProtectedRoute allowedRole="admin">
+                  <AdminAnalytics />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route path="*" element={<Placeholder title="Page Not Found (404)" />} />
           </Route>
-
-          <Route path="*" element={<Placeholder title="Page Not Found (404)" />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }

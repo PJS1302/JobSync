@@ -1,5 +1,6 @@
 import React from 'react';
-import { NavLink, useLocation, Link } from 'react-router-dom';
+import { NavLink, useLocation, Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 const STUDENT_NAV_ITEMS = [
   {
@@ -143,6 +144,8 @@ const ADMIN_NAV_ITEMS = [
 ];
 
 export default function Sidebar({ isOpen = false, onClose }) {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   const location = useLocation();
   const isAdmin = location.pathname.startsWith('/admin');
 
@@ -213,8 +216,8 @@ export default function Sidebar({ isOpen = false, onClose }) {
           ))}
         </nav>
 
-        {/* Portal Switcher Footer */}
-        <div className="p-4 border-t border-slate-800/80 bg-slate-900/60">
+        {/* Portal Switcher & Logout Footer */}
+        <div className="p-4 border-t border-slate-800/80 bg-slate-900/60 space-y-2">
           {isAdmin ? (
             <Link
               to="/dashboard"
@@ -232,6 +235,21 @@ export default function Sidebar({ isOpen = false, onClose }) {
               <span>⚡ Placement Officer Portal</span>
             </Link>
           )}
+
+          <button
+            type="button"
+            onClick={() => {
+              if (onClose) onClose();
+              logout();
+              navigate('/login');
+            }}
+            className="flex items-center justify-center gap-2 w-full py-2 px-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-xs font-semibold text-rose-400 transition-all"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            <span>Sign Out</span>
+          </button>
         </div>
       </aside>
     </>

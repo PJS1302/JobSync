@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import NotificationBell from './NotificationBell';
 import {
   getNotifications,
@@ -11,6 +12,8 @@ import {
  * Common Navbar component with live NotificationBell and portal indicator
  */
 export default function Navbar({ onToggleSidebar }) {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const location = useLocation();
   const isAdmin = location.pathname.startsWith('/admin');
 
@@ -115,32 +118,61 @@ export default function Navbar({ onToggleSidebar }) {
           onMarkAllRead={handleMarkAllRead}
         />
 
-        {/* User avatar menu */}
-        {isAdmin ? (
-          <div className="flex items-center gap-3 pl-3 border-l border-slate-800">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-amber-500 to-indigo-600 text-white font-semibold text-xs flex items-center justify-center ring-2 ring-slate-800">
-              PO
+        {/* User avatar menu & Logout */}
+        <div className="flex items-center gap-3 pl-3 border-l border-slate-800">
+          {isAdmin ? (
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-amber-500 to-indigo-600 text-white font-semibold text-xs flex items-center justify-center ring-2 ring-slate-800 shadow-sm">
+                {user?.name
+                  ?.split(' ')
+                  .map((n) => n[0])
+                  .join('')
+                  .slice(0, 2)
+                  .toUpperCase() || 'PO'}
+              </div>
+              <div className="hidden sm:block text-left">
+                <div className="text-xs font-semibold text-white">{user?.name || 'Dr. K. Raman'}</div>
+                <div className="text-[11px] text-slate-400">{user?.department || 'Placement Cell'}</div>
+              </div>
             </div>
-            <div className="hidden sm:block text-left">
-              <div className="text-xs font-semibold text-white">Dr. K. Raman</div>
-              <div className="text-[11px] text-slate-400">Head • Placement Cell</div>
-            </div>
-          </div>
-        ) : (
-          <Link
-            to="/profile"
-            className="flex items-center gap-3 pl-3 border-l border-slate-800 hover:opacity-85 transition-opacity"
-            title="View Student Profile"
+          ) : (
+            <Link
+              to="/profile"
+              className="flex items-center gap-2.5 hover:opacity-85 transition-opacity"
+              title="View Student Profile"
+            >
+              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold text-xs flex items-center justify-center ring-2 ring-slate-800 shadow-sm">
+                {user?.name
+                  ?.split(' ')
+                  .map((n) => n[0])
+                  .join('')
+                  .slice(0, 2)
+                  .toUpperCase() || 'ST'}
+              </div>
+              <div className="hidden sm:block text-left">
+                <div className="text-xs font-semibold text-white">{user?.name || 'Alex Rivera'}</div>
+                <div className="text-[11px] text-slate-400">{user?.department || 'Computer Science'}</div>
+              </div>
+            </Link>
+          )}
+
+          {/* Logout Button */}
+          <button
+            type="button"
+            onClick={() => {
+              logout();
+              navigate('/login');
+            }}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all text-xs font-semibold flex items-center gap-1.5 ml-1"
+            title="Sign out of JobSync"
+            aria-label="Logout"
           >
-            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold text-xs flex items-center justify-center ring-2 ring-slate-800">
-              JS
-            </div>
-            <div className="hidden sm:block text-left">
-              <div className="text-xs font-semibold text-white">Alex Rivera</div>
-              <div className="text-[11px] text-slate-400">22CS104 • CSE</div>
-            </div>
-          </Link>
-        )}
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            <span className="hidden md:inline">Sign out</span>
+          </button>
+        </div>
       </div>
     </header>
   );

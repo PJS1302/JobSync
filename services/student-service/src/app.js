@@ -8,6 +8,7 @@ const aiRoutes = require('./routes/aiRoutes');
 const interviewRoutes = require('./routes/interviewRoutes');
 const placementRoutes = require('./routes/placementRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const authRoutes = require('./routes/authRoutes');
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 
 const app = express();
@@ -26,6 +27,8 @@ app.get('/health', (req, res) => {
 });
 
 // ── Route mounts ──────────────────────────────────────────────────────────────
+app.use('/api/auth', authRoutes);
+app.use('/api/v1/auth', authRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/v1/students', studentRoutes);
 app.use('/api/applications', applicationRoutes);
