@@ -87,8 +87,17 @@ const getPlacementById = async (id) => {
   return Placement.findById(id);
 };
 
+/**
+ * Retrieve all placement records.
+ * @returns {Promise<Array>}
+ */
+const getAllPlacements = async () => {
+  return Placement.find().sort({ createdAt: -1 });
+};
+
 module.exports = {
   createPlacement,
+  getAllPlacements,
   getPlacementsByStudent,
   getPlacementById,
 };

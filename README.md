@@ -2,8 +2,8 @@
 
 JobSync is a full-stack, microservices-based campus placement drive management system designed to streamline recruitment drives, student profile tracking, resume evaluation, and placement analytics.
 
-> **Status: Initial Project Structure**  
-> This repository contains the initialized architectural skeleton and directory layout. Active implementation of services, APIs, and user interfaces is currently under development.
+> **Status: Fully Integrated & Verified (MAIN ✅)**  
+> All microservices (Student Service, Placement Service), the React + Vite frontend portal, and inter-service communication pipelines are fully implemented, tested, and merged into `main`.
 
 ---
 
@@ -49,45 +49,14 @@ JobSync facilitates seamless interaction between students and placement coordina
 ```
 
 ### Technology Stack
-- **Frontend:** React 18, Vite, Vanilla CSS design system
+- **Frontend:** React 18, Vite, Tailwind CSS, Axios
 - **Backend:** Node.js, Express.js
 - **Microservices:**
   - **Student Service (Port 5001):** Manages student data, resumes, applications, AI matching, and notifications.
   - **Placement Service (Port 5002):** Manages company listings, placement drives, eligibility rules, and selection rounds.
 - **Database:** MongoDB (Dedicated databases per microservice)
-- **Inter-service Communication:** REST API clients
-- **API Documentation & Testing:** Postman Collections & Markdown specifications
-- **Containerization:** Docker Compose
-
----
-
-## 🤖 Planned AI Features
-- **Resume Parser:** Structured data extraction from uploaded candidate resumes.
-- **Skill Extractor:** Automatic technical and soft skill tagging.
-- **Job Matcher:** Drive-to-resume compatibility scoring based on role requirements.
-- **Skill Gap Analyzer:** Actionable feedback on missing prerequisites for target job postings.
-
----
-
-## 🔔 In-App Notification System
-- Notifications are managed centrally as part of the **Student Service** (no extraneous microservices).
-- Delivers status updates on drive eligibility, interview schedules, shortlist notices, and final selections.
-
----
-
-## 📁 Repository Structure
-
-```text
-JobSync/
-├── frontend/               # React + Vite client application
-├── services/
-│   ├── student-service/    # Profiles, resumes, AI analysis, notifications
-│   └── placement-service/  # Drives, companies, eligibility, rounds
-├── postman/                # Postman collections & environment configs
-├── docs/                   # Architecture, database, and API documentation
-├── docker-compose.yml      # Local container orchestration
-└── README.md               # Repository documentation
-```
+- **Inter-service Communication:** REST API clients with fault-tolerant fallbacks
+- **Containerization:** Docker & Docker Compose
 
 ---
 
@@ -98,16 +67,37 @@ JobSync/
 - npm (v9+)
 - MongoDB (v6+) or Docker
 
-### Setup Instructions
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/PJS1302/JobSync.git
-   cd JobSync
-   ```
-2. Configure environment variables by copying `.env.example` in each service:
-   ```bash
-   cp frontend/.env.example frontend/.env
-   cp services/student-service/.env.example services/student-service/.env
-   cp services/placement-service/.env.example services/placement-service/.env
-   ```
-3. Install dependencies and start services once implemented.
+### 1. Running Locally
+
+#### Start Student Service (Port 5001):
+```bash
+cd services/student-service
+npm install
+npm start
+```
+
+#### Start Placement Service (Port 5002):
+```bash
+cd services/placement-service
+npm install
+npm start
+```
+
+#### Start Frontend Client (Port 3000):
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### 2. Running with Docker Compose
+```bash
+docker-compose up --build
+```
+Access the application at `http://localhost:3000`.
+
+### 3. Service-to-Service Integration Tests
+Verify end-to-end service contracts and inter-service REST workflows:
+```bash
+node scripts/test_service_integration.js
+```

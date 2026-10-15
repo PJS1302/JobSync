@@ -67,8 +67,22 @@ const updateApplicationStatus = async (req, res, next) => {
   }
 };
 
+/**
+ * Handle fetching all applications (e.g. for placement office and stats).
+ * GET /api/applications
+ */
+const getAllApplications = async (req, res, next) => {
+  try {
+    const applications = await applicationService.getAllApplications(req.query);
+    return sendSuccess(res, applications, 200);
+  } catch (err) {
+    return next(err);
+  }
+};
+
 module.exports = {
   createApplication,
+  getAllApplications,
   getApplicationsByStudent,
   getApplicationById,
   updateApplicationStatus,

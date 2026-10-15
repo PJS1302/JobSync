@@ -1,11 +1,15 @@
 const express = require('express');
 const {
   createPlacement,
+  getAllPlacements,
   getPlacementsByStudent,
   getPlacementById,
 } = require('../controllers/placementController');
 
 const router = express.Router();
+
+// GET    /api/placements            – get all placement records
+router.get('/', getAllPlacements);
 
 // POST   /api/placements            – record a placement result
 router.post('/', createPlacement);

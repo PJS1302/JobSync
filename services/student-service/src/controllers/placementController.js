@@ -47,8 +47,22 @@ const getPlacementById = async (req, res, next) => {
   }
 };
 
+/**
+ * Handle fetching all placement records.
+ * GET /api/placements
+ */
+const getAllPlacements = async (req, res, next) => {
+  try {
+    const placements = await placementService.getAllPlacements();
+    return sendSuccess(res, placements, 200);
+  } catch (err) {
+    return next(err);
+  }
+};
+
 module.exports = {
   createPlacement,
+  getAllPlacements,
   getPlacementsByStudent,
   getPlacementById,
 };

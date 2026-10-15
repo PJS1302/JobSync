@@ -44,7 +44,7 @@ const executeCandidateSelection = async ({
 
   let drive = null;
   if (driveId && mongoose.Types.ObjectId.isValid(driveId)) {
-    drive = await PlacementDrive.findById(driveId);
+    drive = await PlacementDrive.findById(driveId).populate('companyId');
   }
 
   const results = {
@@ -54,6 +54,10 @@ const executeCandidateSelection = async ({
     remarks,
     steps: {},
   };
+
+  const companyName = drive?.companyId?.name || drive?.company || 'Recruiting Partner';
+  const rawPkg = drive?.package || '';
+  const numPkg = typeof rawPkg === 'number' ? rawPkg : parseInt(String(rawPkg).replace(/[^0-9]/g, ''), 10) || 1800000;
 
   if (decision === 'SELECTED') {
     // 1. Update application status through Student Service REST API
@@ -67,12 +71,13 @@ const executeCandidateSelection = async ({
     // 2. Create/update placement record through Student Service REST API
     const placementRecord = await studentServiceClient.createOrUpdatePlacement({
       studentId: studentId || applicationId,
-      driveId,
-      companyId: drive?.companyId,
+      driveId: String(driveId),
+      companyId: drive?.companyId?._id ? String(drive.companyId._id) : (drive?.companyId ? String(drive.companyId) : ''),
+      companyName,
       role: drive?.role || 'Selected Candidate',
-      package: drive?.package || '',
-      applicationId,
-      status: 'PLACED',
+      package: numPkg,
+      applicationId: String(applicationId),
+      status: 'OFFERED',
       remarks,
       selectedAt: new Date(),
     });
@@ -83,9 +88,9 @@ const executeCandidateSelection = async ({
       studentId: studentId || applicationId,
       title: 'Placement Selection Notification',
       message: `Congratulations! You have been selected for ${drive?.role || 'the role'}.`,
-      type: 'SELECTION',
-      driveId,
-      applicationId,
+      type: 'SELECTION_RESULT',
+      driveId: String(driveId),
+      applicationId: String(applicationId),
     });
     results.steps.notification = notification;
   } else {
@@ -98,13 +103,14 @@ const executeCandidateSelection = async ({
     results.steps.applicationStatus = appUpdate;
 
     if (studentId) {
+      const notifType = decision === 'SHORTLISTED' ? 'SHORTLISTED' : 'APPLICATION_UPDATE';
       const notification = await studentServiceClient.createNotification({
         studentId,
         title: `Application Status: ${decision}`,
         message: `Your application status has been updated to ${decision}.`,
-        type: decision,
-        driveId,
-        applicationId,
+        type: notifType,
+        driveId: String(driveId),
+        applicationId: String(applicationId),
       });
       results.steps.notification = notification;
     }

@@ -146,8 +146,21 @@ const updateApplicationStatus = async (id, status) => {
   );
 };
 
+/**
+ * Retrieve all applications with optional filtering.
+ * @param {Object} filter
+ * @returns {Promise<Array>}
+ */
+const getAllApplications = async (filter = {}) => {
+  const query = {};
+  if (filter.driveId) query.driveId = filter.driveId;
+  if (filter.status) query.status = filter.status;
+  return Application.find(query).sort({ appliedAt: -1 }).populate('studentId', 'name email department cgpa');
+};
+
 module.exports = {
   createApplication,
+  getAllApplications,
   getApplicationsByStudent,
   getApplicationById,
   updateApplicationStatus,
