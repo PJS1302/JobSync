@@ -459,6 +459,65 @@ export async function applyToPlacementDrive(drive) {
   const updated = [newApp, ...applications];
   localStorage.setItem(APPLICATIONS_STORAGE_KEY, JSON.stringify(updated));
 
+  // Synchronize new application into Placement Officer portal (jobsync_admin_applicants)
+  try {
+    const userStr = localStorage.getItem('jobsync_auth_user');
+    const authUser = userStr ? JSON.parse(userStr) : null;
+    const profileStr = localStorage.getItem(PROFILE_STORAGE_KEY);
+    const profile = profileStr ? JSON.parse(profileStr) : null;
+
+    const studentName = authUser?.name || profile?.name || 'Dharaneesh';
+    const studentEmail = authUser?.email || profile?.email || 'dharaneesh@university.edu';
+    const studentDept = authUser?.department || profile?.department || 'Computer Science & Engineering';
+    const studentCgpa = authUser?.cgpa || profile?.cgpa || 8.5;
+
+    const adminAppsRaw = localStorage.getItem('jobsync_admin_applicants');
+    let adminApps = adminAppsRaw ? JSON.parse(adminAppsRaw) : [];
+
+    const newApplicant = {
+      id: newApp.id,
+      student: {
+        name: studentName,
+        email: studentEmail,
+        rollNo: authUser?.rollNo || profile?.rollNo || '22CS104'
+      },
+      department: studentDept,
+      cgpa: studentCgpa,
+      skills: profile?.skills || ['React', 'Node.js', 'JavaScript', 'MongoDB', 'REST APIs'],
+      aiMatchScore: 91,
+      applicationStatus: 'Applied',
+      driveId: drive.id,
+      driveCompany: drive.company,
+      driveRole: drive.role,
+      appliedAt: newApp.appliedDate
+    };
+
+    adminApps.unshift(newApplicant);
+    localStorage.setItem('jobsync_admin_applicants', JSON.stringify(adminApps));
+  } catch (e) {
+    console.error('Failed to sync to admin applicants:', e);
+  }
+
+  // Add application submitted notification for student
+  try {
+    const notifsRaw = localStorage.getItem('jobsync_student_notifications');
+    let notifs = notifsRaw ? JSON.parse(notifsRaw) : [];
+    notifs.unshift({
+      id: `notif-apply-${Date.now()}`,
+      type: 'APPLICATION_UPDATE',
+      title: `Application Submitted: ${drive.company}`,
+      message: `Your application for ${drive.role} has been submitted and is pending screening by the Placement Officer.`,
+      timestamp: new Date().toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      }) + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      read: false,
+      link: '/applications'
+    });
+    localStorage.setItem('jobsync_student_notifications', JSON.stringify(notifs));
+  } catch (e) {}
+
   return { success: true, data: newApp, alreadyApplied: false, isLive };
 }
 

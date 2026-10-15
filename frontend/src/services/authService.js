@@ -33,19 +33,75 @@ const syncStudentProfile = (user) => {
     } catch {
       base = {};
     }
-    localStorage.setItem(
-      'jobsync_student_profile',
-      JSON.stringify({
-        ...base,
-        name: user.name,
-        email: user.email,
-        department: user.department || base.department || 'Computer Science & Engineering',
-        graduationYear: user.graduationYear || base.graduationYear || 2026,
-        cgpa: user.cgpa || base.cgpa || 8.5,
-        skills: user.skills || base.skills || ['React', 'Node.js', 'JavaScript'],
-        backlogs: 0
-      })
-    );
+    const profile = {
+      ...base,
+      name: user.name,
+      email: user.email,
+      department: user.department || base.department || 'Computer Science & Engineering',
+      graduationYear: user.graduationYear || base.graduationYear || 2026,
+      cgpa: user.cgpa || base.cgpa || 8.5,
+      skills: user.skills || base.skills || ['React', 'Node.js', 'JavaScript', 'SQL', 'MongoDB'],
+      backlogs: 0
+    };
+    localStorage.setItem('jobsync_student_profile', JSON.stringify(profile));
+
+    // If student user, ensure they are registered in the placement officer portal (admin applicants)
+    if (user.role !== 'admin') {
+      try {
+        const adminAppsRaw = localStorage.getItem('jobsync_admin_applicants');
+        let adminApps = adminAppsRaw ? JSON.parse(adminAppsRaw) : [];
+        const hasApplicant = adminApps.some(
+          (a) => a.student?.email?.toLowerCase() === user.email?.toLowerCase()
+        );
+        if (!hasApplicant) {
+          adminApps.unshift({
+            id: `app-reg-${Date.now()}`,
+            student: {
+              name: user.name,
+              email: user.email,
+              rollNo: user.rollNo || '22CS104'
+            },
+            department: user.department || 'Computer Science & Engineering',
+            cgpa: user.cgpa || 8.5,
+            skills: profile.skills,
+            aiMatchScore: 92,
+            applicationStatus: 'Applied',
+            driveId: 'drv-01',
+            driveCompany: 'CloudScale Dynamics',
+            driveRole: 'Associate Software Engineer',
+            appliedAt: new Date().toISOString().split('T')[0]
+          });
+          localStorage.setItem('jobsync_admin_applicants', JSON.stringify(adminApps));
+        }
+
+        // Also ensure student applications list is initialized
+        const studentAppsRaw = localStorage.getItem('jobsync_student_applications');
+        let studentApps = studentAppsRaw ? JSON.parse(studentAppsRaw) : [];
+        const hasStudentApp = studentApps.some((a) => a.company === 'CloudScale Dynamics');
+        if (!hasStudentApp) {
+          studentApps.unshift({
+            id: `app-${Date.now()}`,
+            driveId: 'drv-01',
+            company: 'CloudScale Dynamics',
+            role: 'Associate Software Engineer',
+            package: '₹18 - 22 LPA',
+            location: 'Bengaluru / Hybrid',
+            appliedDate: new Date().toISOString().split('T')[0],
+            status: 'applied',
+            currentStage: 'Applied',
+            timeline: [
+              { step: 'Applied', status: 'current', date: 'Just now', notes: 'Application logged with placement cell' },
+              { step: 'Shortlisted', status: 'upcoming', date: null, notes: 'Awaiting recruiter profile review' },
+              { step: 'Interview', status: 'upcoming', date: null, notes: 'Technical assessment round' },
+              { step: 'Selected', status: 'upcoming', date: null, notes: 'Final offer' }
+            ]
+          });
+          localStorage.setItem('jobsync_student_applications', JSON.stringify(studentApps));
+        }
+      } catch (e) {
+        console.error('Failed to sync registered student to applicant list:', e);
+      }
+    }
   }
 };
 

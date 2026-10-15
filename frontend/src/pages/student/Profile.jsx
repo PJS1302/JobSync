@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import Button from '../../components/common/Button';
 import Loader from '../../components/common/Loader';
+import StatusBadge from '../../components/common/StatusBadge';
 import { getStudentProfile, updateStudentProfile } from '../../services/studentService';
 import { useAuth } from '../../context/AuthContext';
 
@@ -27,6 +29,8 @@ export default function StudentProfile() {
   const [error, setError] = useState(null);
   const [successNotice, setSuccessNotice] = useState(null);
   const [isLiveApi, setIsLiveApi] = useState(false);
+  const [studentApps, setStudentApps] = useState([]);
+  const [latestNotification, setLatestNotification] = useState(null);
 
   // Skill input state
   const [newSkill, setNewSkill] = useState('');
@@ -60,8 +64,31 @@ export default function StudentProfile() {
     }
   };
 
+  const loadPlacementActivity = () => {
+    try {
+      const notifsRaw = localStorage.getItem('jobsync_student_notifications');
+      if (notifsRaw) {
+        const notifs = JSON.parse(notifsRaw);
+        setLatestNotification(notifs[0] || null);
+      }
+      const appsRaw = localStorage.getItem('jobsync_student_applications');
+      if (appsRaw) {
+        setStudentApps(JSON.parse(appsRaw));
+      }
+    } catch {}
+  };
+
   useEffect(() => {
     fetchProfile();
+    loadPlacementActivity();
+
+    const handleUpdate = () => loadPlacementActivity();
+    window.addEventListener('storage', handleUpdate);
+    window.addEventListener('jobsync_notification_change', handleUpdate);
+    return () => {
+      window.removeEventListener('storage', handleUpdate);
+      window.removeEventListener('jobsync_notification_change', handleUpdate);
+    };
   }, [user?.id, user?.name]);
 
   // Field change handler
@@ -392,6 +419,69 @@ export default function StudentProfile() {
           </Button>
         </div>
       </form>
+
+      {/* Active Placement Applications & Officer Decisions */}
+      <div className="p-6 md:p-8 rounded-2xl bg-slate-900/60 border border-slate-800 shadow-xl space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-800 pb-3">
+          <div>
+            <h2 className="text-base font-bold text-white tracking-tight">
+              Placement Applications & Screening Status
+            </h2>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Live updates when the Placement Officer shortlists your profile or schedules interview rounds
+            </p>
+          </div>
+          <Link
+            to="/applications"
+            className="text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors"
+          >
+            View All Applications →
+          </Link>
+        </div>
+
+        {/* Latest Notification Banner from Placement Officer */}
+        {latestNotification && (
+          <div className="p-4 rounded-xl bg-gradient-to-r from-blue-900/20 via-indigo-900/20 to-slate-900/60 border border-blue-500/30 flex items-start gap-3">
+            <span className="text-xl">⭐</span>
+            <div className="flex-1">
+              <div className="flex items-center justify-between gap-2">
+                <h4 className="text-xs font-bold text-blue-300">{latestNotification.title}</h4>
+                <span className="text-[10px] text-slate-400 shrink-0">{latestNotification.timestamp}</span>
+              </div>
+              <p className="text-xs text-slate-300 mt-1 leading-relaxed">{latestNotification.message}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Applications List */}
+        {studentApps.length === 0 ? (
+          <div className="p-6 text-center text-xs text-slate-400 border border-dashed border-slate-800 rounded-xl">
+            No placement applications submitted yet. Browse{' '}
+            <Link to="/drives" className="text-blue-400 underline font-medium">
+              Placement Drives
+            </Link>{' '}
+            to apply for open roles.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            {studentApps.slice(0, 4).map((app) => (
+              <div
+                key={app.id}
+                className="p-3.5 rounded-xl bg-slate-800/40 border border-slate-700/50 flex items-start justify-between gap-3 hover:border-slate-600 transition-all"
+              >
+                <div className="space-y-1">
+                  <div className="text-sm font-bold text-white">{app.company}</div>
+                  <div className="text-xs text-slate-400">{app.role}</div>
+                  <div className="text-[11px] text-blue-400 font-medium">
+                    Stage: {app.currentStage || app.stage || 'In Review'}
+                  </div>
+                </div>
+                <StatusBadge status={app.status} />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

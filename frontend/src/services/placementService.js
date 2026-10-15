@@ -608,7 +608,80 @@ export async function getApplicants(driveId = null) {
   }
 
   let applicants = getStored(STORAGE_KEYS.APPLICANTS, INITIAL_APPLICANTS);
-  if (driveId) {
+
+  // Synchronize with active student applications and registered student profile
+  try {
+    const authUserStr = localStorage.getItem('jobsync_auth_user');
+    const authUser = authUserStr ? JSON.parse(authUserStr) : null;
+
+    const profileStr = localStorage.getItem('jobsync_student_profile');
+    const profile = profileStr ? JSON.parse(profileStr) : null;
+
+    const studentAppsStr = localStorage.getItem('jobsync_student_applications');
+    const studentApps = studentAppsStr ? JSON.parse(studentAppsStr) : [];
+
+    const studentName = authUser?.name || profile?.name;
+    const studentEmail = authUser?.email || profile?.email;
+    const studentDept = authUser?.department || profile?.department || 'Computer Science & Engineering';
+    const studentCgpa = authUser?.cgpa || profile?.cgpa || 8.5;
+
+    if (studentName && studentEmail) {
+      // If student applied to specific drives, inject them into applicants
+      if (Array.isArray(studentApps) && studentApps.length > 0) {
+        studentApps.forEach((app) => {
+          const alreadyListed = applicants.some(
+            (a) => a.id === app.id || (a.driveId === app.driveId && a.student?.email?.toLowerCase() === studentEmail.toLowerCase())
+          );
+          if (!alreadyListed) {
+            applicants.unshift({
+              id: app.id || `app-${Date.now()}`,
+              student: {
+                name: studentName,
+                email: studentEmail,
+                rollNo: authUser?.rollNo || profile?.rollNo || '22CS104'
+              },
+              department: studentDept,
+              cgpa: studentCgpa,
+              skills: profile?.skills || ['React', 'Node.js', 'JavaScript', 'SQL', 'MongoDB'],
+              aiMatchScore: 89,
+              applicationStatus: app.status === 'shortlisted' ? 'Shortlisted' : (app.status === 'selected' ? 'Selected' : (app.status === 'rejected' ? 'Rejected' : 'Applied')),
+              driveId: app.driveId || 'drv-01',
+              driveCompany: app.company || 'CloudScale Dynamics',
+              driveRole: app.role || 'Associate Software Engineer',
+              appliedAt: app.appliedDate || new Date().toISOString().split('T')[0]
+            });
+          }
+        });
+      } else {
+        // If student is registered but hasn't applied to other drives yet, show their registered profile application
+        const alreadyRegistered = applicants.some((a) => a.student?.email?.toLowerCase() === studentEmail.toLowerCase());
+        if (!alreadyRegistered) {
+          applicants.unshift({
+            id: `app-reg-${studentEmail.replace(/[^a-zA-Z0-9]/g, '')}`,
+            student: {
+              name: studentName,
+              email: studentEmail,
+              rollNo: authUser?.rollNo || profile?.rollNo || '22CS104'
+            },
+            department: studentDept,
+            cgpa: studentCgpa,
+            skills: profile?.skills || ['React', 'Node.js', 'JavaScript', 'MongoDB', 'REST APIs'],
+            aiMatchScore: 92,
+            applicationStatus: 'Applied',
+            driveId: 'drv-01',
+            driveCompany: 'CloudScale Dynamics',
+            driveRole: 'Associate Software Engineer',
+            appliedAt: new Date().toISOString().split('T')[0]
+          });
+        }
+      }
+      setStored(STORAGE_KEYS.APPLICANTS, applicants);
+    }
+  } catch (e) {
+    console.error('Failed to sync student application to applicants:', e);
+  }
+
+  if (driveId && driveId !== 'ALL') {
     applicants = applicants.filter((a) => a.driveId === driveId);
   }
   return { success: true, data: applicants, isLive: false };
@@ -616,33 +689,201 @@ export async function getApplicants(driveId = null) {
 
 export async function shortlistApplicant(id) {
   try {
-    const res = await placementApiClient.patch(`/api/v1/applicants/${id}/shortlist`);
-    if (res.success && res.data) {
-      return { success: true, data: res.data };
-    }
+    await placementApiClient.patch(`/api/v1/applicants/${id}/shortlist`);
   } catch (err) {
     // Fallback
   }
 
   const applicants = getStored(STORAGE_KEYS.APPLICANTS, INITIAL_APPLICANTS);
+  const targetApplicant = applicants.find((a) => a.id === id);
   const updated = applicants.map((a) => (a.id === id ? { ...a, applicationStatus: 'Shortlisted' } : a));
   setStored(STORAGE_KEYS.APPLICANTS, updated);
+
+  const companyName = targetApplicant?.driveCompany || 'Placement Drive';
+  const roleName = targetApplicant?.driveRole || 'Software Engineer';
+  const candidateName = targetApplicant?.student?.name || 'Student Candidate';
+
+  // 1. Synchronize to student's applications state
+  try {
+    const studentAppsRaw = localStorage.getItem('jobsync_student_applications');
+    let studentApps = studentAppsRaw ? JSON.parse(studentAppsRaw) : [];
+    let appMatched = false;
+
+    studentApps = studentApps.map((app) => {
+      const isTarget =
+        app.id === id ||
+        app.driveId === targetApplicant?.driveId ||
+        app.company?.toLowerCase() === companyName.toLowerCase();
+      if (isTarget) {
+        appMatched = true;
+        return {
+          ...app,
+          status: 'shortlisted',
+          currentStage: 'Shortlisted',
+          timeline: (app.timeline || []).map((t) => {
+            if (t.step === 'Shortlisted') {
+              return {
+                ...t,
+                status: 'completed',
+                date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+                notes: 'Shortlisted by Placement Officer'
+              };
+            }
+            if (t.step === 'Interview') {
+              return { ...t, status: 'current', date: 'Next Round' };
+            }
+            return t;
+          })
+        };
+      }
+      return app;
+    });
+
+    if (!appMatched && targetApplicant) {
+      studentApps.unshift({
+        id: targetApplicant.id,
+        driveId: targetApplicant.driveId || 'drv-01',
+        company: companyName,
+        role: roleName,
+        package: '₹18 - 22 LPA',
+        location: 'Bengaluru / Hybrid',
+        appliedDate: targetApplicant.appliedAt || new Date().toISOString().split('T')[0],
+        status: 'shortlisted',
+        currentStage: 'Shortlisted',
+        timeline: [
+          { step: 'Applied', status: 'completed', date: targetApplicant.appliedAt || 'Recent', notes: 'Application logged with placement cell' },
+          { step: 'Shortlisted', status: 'completed', date: 'Just now', notes: 'Qualified past screening criteria by Placement Officer' },
+          { step: 'Interview', status: 'current', date: 'Next Round', notes: 'Technical Interview scheduled' },
+          { step: 'Selected', status: 'upcoming', date: null, notes: 'Final offer release' }
+        ]
+      });
+    }
+
+    localStorage.setItem('jobsync_student_applications', JSON.stringify(studentApps));
+  } catch (err) {
+    console.error('Failed to sync student application:', err);
+  }
+
+  // 2. Add high-priority unread notification for the student
+  try {
+    const notifsRaw = localStorage.getItem('jobsync_student_notifications');
+    let notifs = notifsRaw ? JSON.parse(notifsRaw) : [];
+    const newNotif = {
+      id: `notif-shortlist-${Date.now()}`,
+      type: 'SHORTLISTED',
+      title: `⭐ Shortlisted: ${companyName}`,
+      message: `Congratulations ${candidateName}! Your profile has been Shortlisted by the Placement Officer for ${roleName} at ${companyName}.`,
+      timestamp: new Date().toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      }) + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      read: false,
+      link: '/applications'
+    };
+    notifs = [newNotif, ...notifs];
+    localStorage.setItem('jobsync_student_notifications', JSON.stringify(notifs));
+  } catch (err) {
+    console.error('Failed to save student notification on shortlist:', err);
+  }
+
+  // 3. Automatically schedule next interview round for the student
+  try {
+    const intsRaw = localStorage.getItem('jobsync_student_interviews');
+    let ints = intsRaw ? JSON.parse(intsRaw) : [];
+    const existing = ints.find((i) => i.company?.toLowerCase() === companyName.toLowerCase());
+    if (!existing) {
+      ints.unshift({
+        id: `int-${Date.now()}`,
+        company: companyName,
+        role: roleName,
+        round: 'Round 2: Technical & Architectural Interview',
+        date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+        time: '11:00 AM IST',
+        mode: 'Online (Video Conference)',
+        locationOrLink: 'https://meet.google.com/jobsync-interview-eval',
+        status: 'scheduled',
+        interviewer: 'Placement Assessment Board',
+        instructions: 'Please be online 5 minutes before time with your code workspace ready.'
+      });
+      localStorage.setItem('jobsync_student_interviews', JSON.stringify(ints));
+    }
+  } catch (err) {
+    console.error('Failed to schedule interview round:', err);
+  }
+
+  try {
+    window.dispatchEvent(new Event('jobsync_notification_change'));
+    window.dispatchEvent(new Event('storage'));
+  } catch {}
+
   return { success: true, data: updated.find((a) => a.id === id) };
 }
 
 export async function rejectApplicant(id) {
   try {
-    const res = await placementApiClient.patch(`/api/v1/applicants/${id}/reject`);
-    if (res.success && res.data) {
-      return { success: true, data: res.data };
-    }
+    await placementApiClient.patch(`/api/v1/applicants/${id}/reject`);
   } catch (err) {
     // Fallback
   }
 
   const applicants = getStored(STORAGE_KEYS.APPLICANTS, INITIAL_APPLICANTS);
+  const targetApplicant = applicants.find((a) => a.id === id);
   const updated = applicants.map((a) => (a.id === id ? { ...a, applicationStatus: 'Rejected' } : a));
   setStored(STORAGE_KEYS.APPLICANTS, updated);
+
+  const companyName = targetApplicant?.driveCompany || 'Placement Drive';
+  const roleName = targetApplicant?.driveRole || 'Software Engineer';
+  const candidateName = targetApplicant?.student?.name || 'Student Candidate';
+
+  // Synchronize to student's applications
+  try {
+    const studentAppsRaw = localStorage.getItem('jobsync_student_applications');
+    if (studentAppsRaw) {
+      let studentApps = JSON.parse(studentAppsRaw);
+      studentApps = studentApps.map((app) => {
+        if (
+          app.id === id ||
+          app.driveId === targetApplicant?.driveId ||
+          app.company?.toLowerCase() === companyName.toLowerCase()
+        ) {
+          return {
+            ...app,
+            status: 'rejected',
+            currentStage: 'Application Closed'
+          };
+        }
+        return app;
+      });
+      localStorage.setItem('jobsync_student_applications', JSON.stringify(studentApps));
+    }
+
+    // Add notification
+    const notifsRaw = localStorage.getItem('jobsync_student_notifications');
+    let notifs = notifsRaw ? JSON.parse(notifsRaw) : [];
+    notifs.unshift({
+      id: `notif-reject-${Date.now()}`,
+      type: 'APPLICATION_UPDATE',
+      title: `Application Update: ${companyName}`,
+      message: `Dear ${candidateName}, your application for ${roleName} at ${companyName} has concluded for this hiring drive.`,
+      timestamp: new Date().toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      }) + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      read: false,
+      link: '/applications'
+    });
+    localStorage.setItem('jobsync_student_notifications', JSON.stringify(notifs));
+  } catch (err) {
+    console.error('Failed to sync rejection notification:', err);
+  }
+
+  try {
+    window.dispatchEvent(new Event('jobsync_notification_change'));
+    window.dispatchEvent(new Event('storage'));
+  } catch {}
+
   return { success: true, data: updated.find((a) => a.id === id) };
 }
 

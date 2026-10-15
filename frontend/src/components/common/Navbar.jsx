@@ -32,7 +32,15 @@ export default function Navbar({ onToggleSidebar }) {
 
   useEffect(() => {
     loadNotifications();
-  }, []);
+
+    const handleUpdate = () => loadNotifications();
+    window.addEventListener('storage', handleUpdate);
+    window.addEventListener('jobsync_notification_change', handleUpdate);
+    return () => {
+      window.removeEventListener('storage', handleUpdate);
+      window.removeEventListener('jobsync_notification_change', handleUpdate);
+    };
+  }, [location.pathname]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 

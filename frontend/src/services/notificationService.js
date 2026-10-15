@@ -169,9 +169,40 @@ export async function markAllNotificationsAsRead() {
   return { success: true, data: updated, isLive };
 }
 
+/**
+ * Add a new notification for the student (e.g. when shortlisted by placement officer)
+ */
+export function addNotification(notification) {
+  try {
+    const saved = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
+    const currentList = saved ? JSON.parse(saved) : INITIAL_NOTIFICATIONS;
+    const newNotif = {
+      id: `notif-${Date.now()}`,
+      timestamp: new Date().toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      }) + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      read: false,
+      ...notification
+    };
+    const updated = [newNotif, ...currentList];
+    localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(updated));
+    return newNotif;
+  } catch (err) {
+    console.error('Failed to save notification:', err);
+    return null;
+  }
+}
+
+export { NOTIFICATIONS_STORAGE_KEY, INITIAL_NOTIFICATIONS };
+
 export default {
   NOTIFICATION_TYPES,
   getNotifications,
   markNotificationAsRead,
-  markAllNotificationsAsRead
+  markAllNotificationsAsRead,
+  addNotification,
+  NOTIFICATIONS_STORAGE_KEY,
+  INITIAL_NOTIFICATIONS
 };
