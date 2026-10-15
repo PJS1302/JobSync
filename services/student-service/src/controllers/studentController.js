@@ -84,10 +84,53 @@ const deleteStudent = async (req, res, next) => {
   }
 };
 
+/**
+ * Handle fetching active student profile.
+ * GET /api/v1/students/profile
+ */
+const getProfile = async (req, res, next) => {
+  try {
+    const student = await studentService.getProfile(req.query.studentId);
+    return sendSuccess(res, student, 200);
+  } catch (err) {
+    return next(err);
+  }
+};
+
+/**
+ * Handle updating active student profile.
+ * PUT /api/v1/students/profile
+ */
+const updateProfile = async (req, res, next) => {
+  try {
+    const student = await studentService.updateProfile(req.body, req.query?.studentId);
+    return sendSuccess(res, student, 200);
+  } catch (err) {
+    return next(err);
+  }
+};
+
+/**
+ * Handle fetching student dashboard metrics.
+ * GET /api/v1/students/dashboard
+ */
+const getDashboard = async (req, res, next) => {
+  try {
+    const metrics = await studentService.getDashboardMetrics(req.query.studentId);
+    return sendSuccess(res, metrics, 200);
+  } catch (err) {
+    return next(err);
+  }
+};
+
 module.exports = {
   createStudent,
   getAllStudents,
   getStudentById,
   updateStudent,
   deleteStudent,
+  getProfile,
+  updateProfile,
+  getDashboard,
 };
+

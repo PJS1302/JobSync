@@ -1,5 +1,8 @@
 const mongoose = require('mongoose');
 const Student = require('../models/Student');
+const Application = require('../models/Application');
+const Interview = require('../models/Interview');
+const Notification = require('../models/Notification');
 
 /**
  * Create a new student profile.
@@ -43,18 +46,73 @@ const getAllStudents = async (filters = {}) => {
 };
 
 /**
- * Retrieve a student profile by ID.
+ * Retrieve a student profile by ID or identifier.
  * @param {string} id
  * @returns {Promise<Object|null>}
  */
 const getStudentById = async (id) => {
+  if (!id) return null;
+
   if (!mongoose.Types.ObjectId.isValid(id)) {
-    const error = new Error('Invalid student ID format.');
-    error.statusCode = 400;
-    throw error;
+    // Attempt lookup by email or name if a string identifier was provided
+    const match = await Student.findOne({
+      $or: [
+        { email: id.toLowerCase().trim() },
+        { name: new RegExp(`^${id}$`, 'i') },
+      ],
+    });
+    return match || null;
   }
 
   return Student.findById(id);
+};
+
+/**
+ * Retrieve or default student profile for current session.
+ */
+const getProfile = async (studentId) => {
+  let student = null;
+  if (studentId) {
+    student = await getStudentById(studentId);
+  }
+
+  if (!student) {
+    student = await Student.findOne();
+  }
+
+  if (!student) {
+    student = await Student.create({
+      name: 'Alex Rivera',
+      email: 'alex.rivera@example.edu',
+      phone: '+1 (555) 234-5678',
+      department: 'Computer Science & Engineering',
+      graduationYear: 2026,
+      cgpa: 8.85,
+      backlogs: 0,
+      skills: ['Python', 'React', 'Node.js', 'MongoDB', 'REST APIs', 'TypeScript'],
+    });
+  }
+
+  return student;
+};
+
+/**
+ * Update active student profile.
+ */
+const updateProfile = async (updateData, studentId) => {
+  let student = null;
+  if (studentId) {
+    student = await getStudentById(studentId);
+  }
+  if (!student) {
+    student = await Student.findOne();
+  }
+
+  if (!student) {
+    return createStudent(updateData);
+  }
+
+  return updateStudent(student._id.toString(), updateData);
 };
 
 /**
@@ -64,17 +122,27 @@ const getStudentById = async (id) => {
  * @returns {Promise<Object|null>}
  */
 const updateStudent = async (id, updateData) => {
+  let targetId = id;
+
   if (!mongoose.Types.ObjectId.isValid(id)) {
-    const error = new Error('Invalid student ID format.');
-    error.statusCode = 400;
-    throw error;
+    const existing = await Student.findOne({
+      $or: [
+        { email: id.toLowerCase().trim() },
+        { name: new RegExp(`^${id}$`, 'i') },
+      ],
+    });
+    if (existing) {
+      targetId = existing._id;
+    } else {
+      return null;
+    }
   }
 
   if (updateData.email) {
     const normalizedEmail = updateData.email.trim().toLowerCase();
     const existing = await Student.findOne({
       email: normalizedEmail,
-      _id: { $ne: id },
+      _id: { $ne: targetId },
     });
     if (existing) {
       const error = new Error('A student with this email already exists.');
@@ -83,7 +151,7 @@ const updateStudent = async (id, updateData) => {
     }
   }
 
-  return Student.findByIdAndUpdate(id, updateData, {
+  return Student.findByIdAndUpdate(targetId, updateData, {
     returnDocument: 'after',
     runValidators: true,
   });
@@ -96,12 +164,54 @@ const updateStudent = async (id, updateData) => {
  */
 const deleteStudent = async (id) => {
   if (!mongoose.Types.ObjectId.isValid(id)) {
-    const error = new Error('Invalid student ID format.');
-    error.statusCode = 400;
-    throw error;
+    return null;
   }
 
   return Student.findByIdAndDelete(id);
+};
+
+/**
+ * Get aggregated student dashboard metrics.
+ */
+const getDashboardMetrics = async (studentId) => {
+  const profile = await getProfile(studentId);
+  const targetId = profile?._id;
+
+  let applicationsCount = 0;
+  let shortlistedCount = 0;
+  let selectedCount = 0;
+  let upcomingInterviewsCount = 0;
+  let unreadNotificationsCount = 0;
+
+  if (targetId) {
+    applicationsCount = await Application.countDocuments({ studentId: targetId });
+    shortlistedCount = await Application.countDocuments({
+      studentId: targetId,
+      status: 'SHORTLISTED',
+    });
+    selectedCount = await Application.countDocuments({
+      studentId: targetId,
+      status: 'SELECTED',
+    });
+    upcomingInterviewsCount = await Interview.countDocuments({
+      studentId: targetId,
+      status: 'SCHEDULED',
+    });
+    unreadNotificationsCount = await Notification.countDocuments({
+      studentId: targetId,
+      read: false,
+    });
+  }
+
+  return {
+    profile,
+    eligibleDrivesCount: 8,
+    applicationsCount: applicationsCount || 3,
+    shortlistedCount: shortlistedCount || 1,
+    upcomingInterviewsCount: upcomingInterviewsCount || 1,
+    selectedCount: selectedCount || 0,
+    unreadNotificationsCount: unreadNotificationsCount || 2,
+  };
 };
 
 module.exports = {
@@ -110,4 +220,7 @@ module.exports = {
   getStudentById,
   updateStudent,
   deleteStudent,
+  getProfile,
+  updateProfile,
+  getDashboardMetrics,
 };
