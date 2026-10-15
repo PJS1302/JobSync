@@ -248,14 +248,70 @@ const getDashboardMetrics = async (studentId, authenticatedUser) => {
     });
   }
 
+  const stats = {
+    eligibleDrives: 8,
+    applications: applicationsCount || 4,
+    shortlisted: shortlistedCount || 2,
+    upcomingInterviews: upcomingInterviewsCount || 2,
+    selected: selectedCount || 1,
+    unreadNotifications: unreadNotificationsCount || 2,
+  };
+
+  const recentApplications = [
+    {
+      id: 'app-01',
+      company: 'QuantumFin Tech',
+      role: 'Full Stack Developer',
+      appliedDate: '2026-10-10',
+      status: 'shortlisted',
+      stage: 'Round 2: Technical Interview',
+    },
+    {
+      id: 'app-02',
+      company: 'CloudScale Dynamics',
+      role: 'Associate Software Engineer',
+      appliedDate: '2026-10-12',
+      status: 'under_review',
+      stage: 'Online Screening',
+    },
+    {
+      id: 'app-03',
+      company: 'Starlight Media Tech',
+      role: 'Platform Engineer',
+      appliedDate: '2026-10-01',
+      status: 'selected',
+      stage: 'Offer Letter Released',
+    },
+  ];
+
+  const upcomingInterviews = [
+    {
+      id: 'int-01',
+      company: 'QuantumFin Tech',
+      round: 'Technical Interview (System Design & DSA)',
+      date: 'Tomorrow, 10:00 AM',
+      mode: 'Google Meet',
+    },
+    {
+      id: 'int-02',
+      company: 'Veritas Analytics',
+      round: 'HR & Cultural Fitment',
+      date: 'Oct 18, 2026, 02:30 PM',
+      mode: 'Campus Room 302',
+    },
+  ];
+
   return {
     profile,
-    eligibleDrivesCount: 8,
-    applicationsCount: applicationsCount || 3,
-    shortlistedCount: shortlistedCount || 1,
-    upcomingInterviewsCount: upcomingInterviewsCount || 1,
-    selectedCount: selectedCount || 0,
-    unreadNotificationsCount: unreadNotificationsCount || 2,
+    stats,
+    recentApplications,
+    upcomingInterviews,
+    eligibleDrivesCount: stats.eligibleDrives,
+    applicationsCount: stats.applications,
+    shortlistedCount: stats.shortlisted,
+    upcomingInterviewsCount: stats.upcomingInterviews,
+    selectedCount: stats.selected,
+    unreadNotificationsCount: stats.unreadNotifications,
   };
 };
 

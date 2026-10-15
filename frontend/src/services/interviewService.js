@@ -63,6 +63,10 @@ export async function getStudentInterviews() {
   return { success: true, data, isLive: false };
 }
 
+export { INITIAL_INTERVIEWS, INTERVIEWS_STORAGE_KEY };
+
 export default {
-  getStudentInterviews
+  getStudentInterviews,
+  INITIAL_INTERVIEWS,
+  INTERVIEWS_STORAGE_KEY
 };
