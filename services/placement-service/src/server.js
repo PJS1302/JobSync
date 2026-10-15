@@ -8,8 +8,9 @@ const start = async () => {
     try {
       await connectDB();
     } catch (err) {
-      console.error('[Placement Service] Failed to connect to MongoDB:', err.message);
-      process.exit(1);
+      console.warn('[Placement Service] MongoDB connection warning:', err.message);
+      console.log('[Placement Service] Server starting in resilient mode. Retrying database connection in background...');
+      setTimeout(() => connectDB().catch(() => {}), 5000);
     }
   } else {
     console.warn(

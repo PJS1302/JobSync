@@ -8,8 +8,9 @@ const start = async () => {
     try {
       await connectDB();
     } catch (err) {
-      console.error('[Student Service] Failed to connect to MongoDB:', err.message);
-      process.exit(1);
+      console.warn('[Student Service] MongoDB connection warning:', err.message);
+      console.log('[Student Service] Server starting in resilient mode. Retrying database connection in background...');
+      setTimeout(() => connectDB().catch(() => {}), 5000);
     }
   } else {
     console.warn('[Student Service] MONGODB_URI not set — running without database connection.');

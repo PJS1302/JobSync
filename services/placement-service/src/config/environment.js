@@ -7,7 +7,7 @@ const environment = {
   nodeEnv: process.env.NODE_ENV || 'development',
   mongodbUri:
     process.env.MONGODB_URI ||
-    'mongodb+srv://prejitjsanthosh_db_user:jobsync%4026@cluster0.wpbdsnt.mongodb.net/jobsync_placement_db?retryWrites=true&w=majority',
+    'mongodb+srv://dharaneesh0530_db_user:Dharaneesh!30@cluster0.hgkmalq.mongodb.net/jobsync_placement_db?retryWrites=true&w=majority',
   studentServiceUrl: process.env.STUDENT_SERVICE_URL || 'http://localhost:5001',
 };
 
