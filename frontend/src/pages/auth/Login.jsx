@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import Button from '../../components/common/Button';
@@ -8,13 +8,23 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [role, setRole] = useState('student'); // 'student' | 'admin'
+  const searchParams = new URLSearchParams(location.search);
+  const requestedRole = location.state?.role || searchParams.get('role');
+  const noticeMsg = location.state?.notice || searchParams.get('notice');
+
+  const [role, setRole] = useState(requestedRole === 'admin' ? 'admin' : 'student');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (requestedRole) {
+      setRole(requestedRole === 'admin' ? 'admin' : 'student');
+    }
+  }, [requestedRole]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -77,6 +87,14 @@ export default function Login() {
       {/* Main Card */}
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md z-10 px-4">
         <div className="bg-slate-900/80 backdrop-blur-xl py-8 px-6 sm:px-10 shadow-2xl rounded-3xl border border-slate-800/80 space-y-6">
+          {/* Switch Portal Notice */}
+          {noticeMsg && (
+            <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 text-xs flex items-center gap-2.5 animate-fadeIn">
+              <span className="text-base shrink-0">🔐</span>
+              <span className="font-medium leading-relaxed">{noticeMsg}</span>
+            </div>
+          )}
+
           {/* Role Toggle Tabs */}
           <div className="flex p-1 rounded-xl bg-slate-950/80 border border-slate-800/80 text-xs font-semibold">
             <button

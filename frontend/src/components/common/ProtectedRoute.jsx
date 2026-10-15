@@ -8,7 +8,7 @@ import Loader from './Loader';
  * and enforcing role permissions (student vs admin).
  */
 export default function ProtectedRoute({ children, allowedRole }) {
-  const { user, isAuthenticated, loading } = useAuth();
+  const { user, isAuthenticated, loading, logout } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -25,14 +25,19 @@ export default function ProtectedRoute({ children, allowedRole }) {
   }
 
   if (allowedRole && user.role !== allowedRole) {
-    // If logged in as student attempting to access admin route, redirect to student dashboard
-    if (user.role === 'student') {
-      return <Navigate to="/dashboard" replace />;
-    }
-    // If logged in as admin attempting to access non-admin route, redirect to admin dashboard
-    if (user.role === 'admin') {
-      return <Navigate to="/admin/dashboard" replace />;
-    }
+    // When attempting to access another role's portal, prompt for login with that role
+    logout();
+    return (
+      <Navigate
+        to={`/login?role=${allowedRole}`}
+        state={{
+          from: location,
+          role: allowedRole,
+          notice: `Please log in with ${allowedRole === 'admin' ? 'Placement Officer' : 'Student'} credentials to access this portal.`
+        }}
+        replace
+      />
+    );
   }
 
   return children;

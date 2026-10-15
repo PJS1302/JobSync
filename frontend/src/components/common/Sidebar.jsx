@@ -219,21 +219,39 @@ export default function Sidebar({ isOpen = false, onClose }) {
         {/* Portal Switcher & Logout Footer */}
         <div className="p-4 border-t border-slate-800/80 bg-slate-900/60 space-y-2">
           {isAdmin ? (
-            <Link
-              to="/dashboard"
-              onClick={onClose}
-              className="flex items-center justify-center gap-2 w-full py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700/80 border border-slate-700/80 text-xs font-semibold text-slate-200 transition-all hover:text-white"
+            <button
+              type="button"
+              onClick={() => {
+                if (onClose) onClose();
+                logout();
+                navigate('/login?role=student', {
+                  state: {
+                    role: 'student',
+                    notice: 'Please log in with Student credentials to access the Student portal.'
+                  }
+                });
+              }}
+              className="flex items-center justify-center gap-2 w-full py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700/80 border border-slate-700/80 text-xs font-semibold text-slate-200 transition-all hover:text-white cursor-pointer"
             >
               <span>← Switch to Student Portal</span>
-            </Link>
+            </button>
           ) : (
-            <Link
-              to="/admin/dashboard"
-              onClick={onClose}
-              className="flex items-center justify-center gap-2 w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-blue-600/20 to-indigo-600/20 hover:from-blue-600/30 hover:to-indigo-600/30 border border-blue-500/30 text-xs font-semibold text-blue-300 transition-all hover:text-white"
+            <button
+              type="button"
+              onClick={() => {
+                if (onClose) onClose();
+                logout();
+                navigate('/login?role=admin', {
+                  state: {
+                    role: 'admin',
+                    notice: 'Please log in with Placement Officer credentials to access the Placement Officer portal.'
+                  }
+                });
+              }}
+              className="flex items-center justify-center gap-2 w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-blue-600/20 to-indigo-600/20 hover:from-blue-600/30 hover:to-indigo-600/30 border border-blue-500/30 text-xs font-semibold text-blue-300 transition-all hover:text-white cursor-pointer"
             >
               <span>⚡ Placement Officer Portal</span>
-            </Link>
+            </button>
           )}
 
           <button

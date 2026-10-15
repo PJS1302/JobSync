@@ -44,6 +44,18 @@ export function AuthProvider({ children }) {
     setToken(null);
   };
 
+  const switchRole = (newRole) => {
+    if (user) {
+      const updatedUser = {
+        ...user,
+        role: newRole,
+      };
+      setUser(updatedUser);
+      localStorage.setItem('jobsync_auth_user', JSON.stringify(updatedUser));
+      return updatedUser;
+    }
+  };
+
   const value = {
     user,
     token,
@@ -52,6 +64,7 @@ export function AuthProvider({ children }) {
     login,
     register,
     logout,
+    switchRole,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

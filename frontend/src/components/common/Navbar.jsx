@@ -93,21 +93,39 @@ export default function Navbar({ onToggleSidebar }) {
       <div className="flex items-center gap-4">
         {/* Quick Portal Switcher button */}
         {isAdmin ? (
-          <Link
-            to="/dashboard"
-            className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700/80 border border-slate-700/80 text-xs font-semibold text-slate-300 hover:text-white transition-all"
+          <button
+            type="button"
+            onClick={() => {
+              logout();
+              navigate('/login?role=student', {
+                state: {
+                  role: 'student',
+                  notice: 'Please log in with Student credentials to access the Student portal.'
+                }
+              });
+            }}
+            className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700/80 border border-slate-700/80 text-xs font-semibold text-slate-300 hover:text-white transition-all cursor-pointer"
           >
             <span>Student View</span>
             <span className="text-[10px] text-slate-400">↗</span>
-          </Link>
+          </button>
         ) : (
-          <Link
-            to="/admin/dashboard"
-            className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/20 text-xs font-semibold text-blue-400 hover:text-blue-300 transition-all"
+          <button
+            type="button"
+            onClick={() => {
+              logout();
+              navigate('/login?role=admin', {
+                state: {
+                  role: 'admin',
+                  notice: 'Please log in with Placement Officer credentials to access the Placement Officer portal.'
+                }
+              });
+            }}
+            className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/20 text-xs font-semibold text-blue-400 hover:text-blue-300 transition-all cursor-pointer"
           >
             <span>Placement Officer</span>
             <span className="text-[10px] text-blue-400">→</span>
-          </Link>
+          </button>
         )}
 
         {/* Notification Bell */}
