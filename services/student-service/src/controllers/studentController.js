@@ -90,7 +90,7 @@ const deleteStudent = async (req, res, next) => {
  */
 const getProfile = async (req, res, next) => {
   try {
-    const student = await studentService.getProfile(req.query.studentId);
+    const student = await studentService.getProfile(req.query?.studentId, req.user);
     return sendSuccess(res, student, 200);
   } catch (err) {
     return next(err);
@@ -103,7 +103,7 @@ const getProfile = async (req, res, next) => {
  */
 const updateProfile = async (req, res, next) => {
   try {
-    const student = await studentService.updateProfile(req.body, req.query?.studentId);
+    const student = await studentService.updateProfile(req.body, req.query?.studentId, req.user);
     return sendSuccess(res, student, 200);
   } catch (err) {
     return next(err);
@@ -116,7 +116,7 @@ const updateProfile = async (req, res, next) => {
  */
 const getDashboard = async (req, res, next) => {
   try {
-    const metrics = await studentService.getDashboardMetrics(req.query.studentId);
+    const metrics = await studentService.getDashboardMetrics(req.query?.studentId, req.user);
     return sendSuccess(res, metrics, 200);
   } catch (err) {
     return next(err);

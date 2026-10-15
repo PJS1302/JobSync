@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Student = require('../models/Student');
+const User = require('../models/User');
 const Application = require('../models/Application');
 const Interview = require('../models/Interview');
 const Notification = require('../models/Notification');
@@ -69,25 +70,75 @@ const getStudentById = async (id) => {
 
 /**
  * Retrieve or default student profile for current session.
+ * Checks studentId query, authenticated user token, or defaults.
  */
-const getProfile = async (studentId) => {
+const getProfile = async (studentId, authenticatedUser) => {
   let student = null;
+
+  // 1. If explicit studentId / identifier passed
   if (studentId) {
     student = await getStudentById(studentId);
+    if (!student) {
+      if (mongoose.Types.ObjectId.isValid(studentId)) {
+        const user = await User.findById(studentId);
+        if (user) {
+          if (user.studentId) student = await Student.findById(user.studentId);
+          if (!student && user.email) student = await Student.findOne({ email: user.email.toLowerCase().trim() });
+        }
+      } else {
+        student = await Student.findOne({
+          $or: [
+            { email: String(studentId).toLowerCase().trim() },
+            { name: new RegExp(`^${studentId}$`, 'i') },
+          ],
+        });
+      }
+    }
   }
 
+  // 2. If authenticated user provided from JWT/auth token
+  if (!student && authenticatedUser) {
+    if (authenticatedUser.studentId) {
+      student = await Student.findById(authenticatedUser.studentId);
+    }
+    if (!student && authenticatedUser.email) {
+      student = await Student.findOne({ email: authenticatedUser.email.toLowerCase().trim() });
+    }
+    if (!student && authenticatedUser.name) {
+      student = await Student.findOne({ name: authenticatedUser.name.trim() });
+    }
+
+    // Auto-create student record for authenticated user if not existing yet
+    if (!student && (authenticatedUser.name || authenticatedUser.email)) {
+      student = await Student.create({
+        name: authenticatedUser.name || 'Student Candidate',
+        email: (authenticatedUser.email || `student_${Date.now()}@example.edu`).toLowerCase().trim(),
+        department: authenticatedUser.department || 'Computer Science & Engineering',
+        graduationYear: authenticatedUser.graduationYear || 2026,
+        cgpa: 8.5,
+        backlogs: 0,
+        skills: ['React', 'Node.js', 'JavaScript'],
+      });
+
+      if (authenticatedUser._id) {
+        await User.findByIdAndUpdate(authenticatedUser._id, { studentId: student._id });
+      }
+    }
+  }
+
+  // 3. Fallback only if no authenticated user and no student found
   if (!student) {
     student = await Student.findOne();
   }
 
   if (!student) {
     student = await Student.create({
-      name: 'Alex Rivera',
-      email: 'alex.rivera@example.edu',
+      name: 'Student Candidate',
+      email: 'student@example.edu',
       phone: '+1 (555) 234-5678',
       department: 'Computer Science & Engineering',
       graduationYear: 2026,
-      cgpa: 8.85,
+      cgpa: 8.5,
       backlogs: 0,
       skills: ['Python', 'React', 'Node.js', 'MongoDB', 'REST APIs', 'TypeScript'],
     });
@@ -99,14 +150,8 @@ const getProfile = async (studentId) => {
 /**
  * Update active student profile.
  */
-const updateProfile = async (updateData, studentId) => {
-  let student = null;
-  if (studentId) {
-    student = await getStudentById(studentId);
-  }
-  if (!student) {
-    student = await Student.findOne();
-  }
+const updateProfile = async (updateData, studentId, authenticatedUser) => {
+  let student = await getProfile(studentId, authenticatedUser);
 
   if (!student) {
     return createStudent(updateData);
@@ -173,8 +218,8 @@ const deleteStudent = async (id) => {
 /**
  * Get aggregated student dashboard metrics.
  */
-const getDashboardMetrics = async (studentId) => {
-  const profile = await getProfile(studentId);
+const getDashboardMetrics = async (studentId, authenticatedUser) => {
+  const profile = await getProfile(studentId, authenticatedUser);
   const targetId = profile?._id;
 
   let applicationsCount = 0;

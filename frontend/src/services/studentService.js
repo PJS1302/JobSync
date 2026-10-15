@@ -141,9 +141,20 @@ const INITIAL_DASHBOARD = {
 /**
  * Fetch Student Profile
  */
-export async function getStudentProfile() {
+export async function getStudentProfile(studentId) {
+  const userStr = localStorage.getItem('jobsync_auth_user');
+  let authUser = null;
   try {
-    const res = await studentApiClient.get('/api/v1/students/profile');
+    authUser = userStr ? JSON.parse(userStr) : null;
+  } catch {
+    authUser = null;
+  }
+
+  const targetId = studentId || authUser?.studentId || authUser?.id || authUser?.email;
+  const params = targetId ? { studentId: targetId } : {};
+
+  try {
+    const res = await studentApiClient.get('/api/v1/students/profile', { params });
     if (res.success && res.data) {
       localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(res.data));
       return { success: true, data: res.data, isLive: true };
@@ -153,19 +164,42 @@ export async function getStudentProfile() {
   }
 
   const saved = localStorage.getItem(PROFILE_STORAGE_KEY);
-  const data = saved ? JSON.parse(saved) : INITIAL_PROFILE;
+  let data = saved ? JSON.parse(saved) : null;
+  if (!data) {
+    data = {
+      ...INITIAL_PROFILE,
+      name: authUser?.name || INITIAL_PROFILE.name,
+      email: authUser?.email || INITIAL_PROFILE.email,
+      department: authUser?.department || INITIAL_PROFILE.department
+    };
+  } else if (authUser?.name && data.name === 'Alex Rivera' && authUser.name !== 'Alex Rivera') {
+    data.name = authUser.name;
+    data.email = authUser.email || data.email;
+    data.department = authUser.department || data.department;
+  }
   return { success: true, data, isLive: false };
 }
 
 /**
  * Update Student Profile
  */
-export async function updateStudentProfile(profileData) {
+export async function updateStudentProfile(profileData, studentId) {
   localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profileData));
+
+  const userStr = localStorage.getItem('jobsync_auth_user');
+  let authUser = null;
+  try {
+    authUser = userStr ? JSON.parse(userStr) : null;
+  } catch {
+    authUser = null;
+  }
+
+  const targetId = studentId || authUser?.studentId || authUser?.id;
+  const params = targetId ? { studentId: targetId } : {};
 
   let isLive = false;
   try {
-    const res = await studentApiClient.put('/api/v1/students/profile', profileData);
+    const res = await studentApiClient.put('/api/v1/students/profile', profileData, { params });
     if (res.success) {
       isLive = true;
     }
@@ -179,9 +213,20 @@ export async function updateStudentProfile(profileData) {
 /**
  * Fetch Student Dashboard Data
  */
-export async function getStudentDashboard() {
+export async function getStudentDashboard(studentId) {
+  const userStr = localStorage.getItem('jobsync_auth_user');
+  let authUser = null;
   try {
-    const res = await studentApiClient.get('/api/v1/students/dashboard');
+    authUser = userStr ? JSON.parse(userStr) : null;
+  } catch {
+    authUser = null;
+  }
+
+  const targetId = studentId || authUser?.studentId || authUser?.id || authUser?.email;
+  const params = targetId ? { studentId: targetId } : {};
+
+  try {
+    const res = await studentApiClient.get('/api/v1/students/dashboard', { params });
     if (res.success && res.data) {
       return { success: true, data: res.data, isLive: true };
     }
@@ -190,7 +235,19 @@ export async function getStudentDashboard() {
   }
 
   const savedProfile = localStorage.getItem(PROFILE_STORAGE_KEY);
-  const profile = savedProfile ? JSON.parse(savedProfile) : INITIAL_PROFILE;
+  let profile = savedProfile ? JSON.parse(savedProfile) : null;
+  if (!profile) {
+    profile = {
+      ...INITIAL_PROFILE,
+      name: authUser?.name || INITIAL_PROFILE.name,
+      email: authUser?.email || INITIAL_PROFILE.email,
+      department: authUser?.department || INITIAL_PROFILE.department
+    };
+  } else if (authUser?.name && profile.name === 'Alex Rivera' && authUser.name !== 'Alex Rivera') {
+    profile.name = authUser.name;
+    profile.email = authUser.email || profile.email;
+    profile.department = authUser.department || profile.department;
+  }
 
   return {
     success: true,

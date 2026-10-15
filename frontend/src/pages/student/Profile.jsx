@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Button from '../../components/common/Button';
 import Loader from '../../components/common/Loader';
 import { getStudentProfile, updateStudentProfile } from '../../services/studentService';
+import { useAuth } from '../../context/AuthContext';
 
 const DEPARTMENTS = [
   'Computer Science & Engineering',
@@ -19,6 +20,7 @@ const DEPARTMENTS = [
  * Handles loading, error, and empty states.
  */
 export default function StudentProfile() {
+  const { user } = useAuth();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -34,9 +36,19 @@ export default function StudentProfile() {
     setLoading(true);
     setError(null);
     try {
-      const res = await getStudentProfile();
+      const res = await getStudentProfile(user?.studentId || user?.id || user?.email);
       if (res.success && res.data) {
-        setProfile(res.data);
+        const data = { ...res.data };
+        if (user?.name && (data.name === 'Alex Rivera' || !data.name)) {
+          data.name = user.name;
+        }
+        if (user?.email && (data.email === 'alex.rivera@campus.edu' || !data.email)) {
+          data.email = user.email;
+        }
+        if (user?.department && (!data.department || data.department === 'Computer Science & Engineering')) {
+          data.department = user.department;
+        }
+        setProfile(data);
         setIsLiveApi(Boolean(res.isLive));
       } else {
         throw new Error(res.message || 'Failed to retrieve student profile');
@@ -50,7 +62,7 @@ export default function StudentProfile() {
 
   useEffect(() => {
     fetchProfile();
-  }, []);
+  }, [user?.id, user?.name]);
 
   // Field change handler
   const handleChange = (e) => {

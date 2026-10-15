@@ -4,12 +4,14 @@ import Button from '../../components/common/Button';
 import StatusBadge from '../../components/common/StatusBadge';
 import Loader from '../../components/common/Loader';
 import { getStudentDashboard } from '../../services/studentService';
+import { useAuth } from '../../context/AuthContext';
 
 /**
  * Student Dashboard Module
  * Displays 6 core placement metrics with loading, error, and empty states
  */
 export default function StudentDashboard() {
+  const { user } = useAuth();
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -19,7 +21,7 @@ export default function StudentDashboard() {
     setLoading(true);
     setError(null);
     try {
-      const res = await getStudentDashboard();
+      const res = await getStudentDashboard(user?.studentId || user?.id || user?.email);
       if (res.success && res.data) {
         setDashboardData(res.data);
         setIsLiveApi(Boolean(res.isLive));
@@ -35,7 +37,7 @@ export default function StudentDashboard() {
 
   useEffect(() => {
     fetchDashboard();
-  }, []);
+  }, [user?.id, user?.name]);
 
   // 1. Loading State
   if (loading) {
@@ -79,6 +81,8 @@ export default function StudentDashboard() {
   }
 
   const { stats, profile, recentApplications = [], upcomingInterviews = [] } = dashboardData || {};
+  const displayName = user?.name || profile?.name || 'Student Candidate';
+  const displayDepartment = user?.department || profile?.department || 'Computer Science & Engineering';
 
   // Check if everything is completely empty
   const isAllEmpty =
@@ -97,7 +101,7 @@ export default function StudentDashboard() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <h1 className="text-2xl font-extrabold text-white tracking-tight">
-              Welcome back, {profile?.name || 'Student Candidate'}! 🎓
+              Welcome back, {displayName}! 🎓
             </h1>
             <span
               className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
@@ -110,7 +114,7 @@ export default function StudentDashboard() {
             </span>
           </div>
           <p className="text-xs md:text-sm text-slate-400">
-            {profile?.department || 'Computer Science & Engineering'} • Roll: 22CS104 • CGPA:{' '}
+            {displayDepartment} • Roll: 22CS104 • CGPA:{' '}
             <strong className="text-white">{profile?.cgpa || '8.72'}</strong>
           </p>
         </div>

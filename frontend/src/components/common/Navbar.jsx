@@ -131,7 +131,7 @@ export default function Navbar({ onToggleSidebar }) {
                   .toUpperCase() || 'PO'}
               </div>
               <div className="hidden sm:block text-left">
-                <div className="text-xs font-semibold text-white">{user?.name || 'Dr. K. Raman'}</div>
+                <div className="text-xs font-semibold text-white">{user?.name || 'Placement Officer'}</div>
                 <div className="text-[11px] text-slate-400">{user?.department || 'Placement Cell'}</div>
               </div>
             </div>
@@ -150,7 +150,7 @@ export default function Navbar({ onToggleSidebar }) {
                   .toUpperCase() || 'ST'}
               </div>
               <div className="hidden sm:block text-left">
-                <div className="text-xs font-semibold text-white">{user?.name || 'Alex Rivera'}</div>
+                <div className="text-xs font-semibold text-white">{user?.name || 'Student'}</div>
                 <div className="text-[11px] text-slate-400">{user?.department || 'Computer Science'}</div>
               </div>
             </Link>
