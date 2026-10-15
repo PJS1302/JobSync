@@ -1,0 +1,15 @@
+{
+  "name": "jobsync-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "services/student-service",
+    "services/placement-service",
+    "frontend"
+  ],
+  "scripts": {
+    "start": "node services/student-service/src/server.js",
+    "start:student": "node services/student-service/src/server.js",
+    "start:placement": "node services/placement-service/src/server.js"
+  }
+}
