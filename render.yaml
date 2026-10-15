@@ -1,0 +1,40 @@
+services:
+  # ── 1. Student Service ────────────────────────────────────────────────────────
+  - type: web
+    name: jobsync-student-service
+    runtime: node
+    branch: Draxh
+    rootDir: services/student-service
+    buildCommand: npm install
+    startCommand: node src/server.js
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        value: mongodb+srv://dharaneesh0530_db_user:Dharaneesh!30@cluster0.hgkmalq.mongodb.net/jobsync_student_db?retryWrites=true&w=majority
+      - key: GEMINI_API_KEY
+        value: AIzaSyD9uivN4RsTIu3MdW_sCTfPlN1-sjuxcBE
+      - key: GEMINI_MODEL
+        value: gemini-flash-latest
+
+  # ── 2. Placement Service ──────────────────────────────────────────────────────
+  - type: web
+    name: jobsync-placement-service
+    runtime: node
+    branch: Draxh
+    rootDir: services/placement-service
+    buildCommand: npm install
+    startCommand: node src/server.js
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        value: mongodb+srv://dharaneesh0530_db_user:Dharaneesh!30@cluster0.hgkmalq.mongodb.net/jobsync_placement_db?retryWrites=true&w=majority
